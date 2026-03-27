@@ -233,7 +233,7 @@ export default function Sales() {
       {/* New Sale Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal modal-lg" onClick={e => e.stopPropagation()}>
+          <div className="modal modal-xl" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Record New Sale</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
@@ -264,20 +264,20 @@ export default function Sales() {
                     <table className="data-table" style={{ marginBottom: 0, width: '100%', minWidth: '100%' }}>
                       <thead>
                         <tr>
-                          <th>Product</th>
-                          <th style={{ width: 80 }}>HSN/SAC</th>
-                          <th style={{ width: 60 }}>UOM</th>
-                          <th style={{ width: 70 }}>Qty</th>
-                          <th style={{ width: 90 }}>Price (₹)</th>
-                          <th style={{ width: 90, textAlign: 'right' }}>Total</th>
-                          <th style={{ width: 40 }}></th>
+                          <th style={{ width: '33%' }}>Product</th>
+                          <th style={{ width: '11%' }}>HSN/SAC</th>
+                          <th style={{ width: '10%' }}>UOM</th>
+                          <th style={{ width: '12%' }}>Qty</th>
+                          <th style={{ width: '15%' }}>Price (₹)</th>
+                          <th style={{ width: '15%', textAlign: 'right' }}>Total</th>
+                          <th style={{ width: '4%' }}></th>
                         </tr>
                       </thead>
                       <tbody>
                         {items.map((item, i) => (
                           <tr key={i}>
                             <td>
-                              <select className="form-select" value={item.productId} onChange={e => handleProductChange(i, e.target.value)} required style={{ fontSize: 13, padding: '8px 10px' }}>
+                              <select className="form-select" value={item.productId} onChange={e => handleProductChange(i, e.target.value)} required style={{ fontSize: 13, padding: '8px 10px', width: '100%', minWidth: '120px' }}>
                                 <option value="">Select</option>
                                 {products.map(p => (
                                   <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>
@@ -285,16 +285,16 @@ export default function Sales() {
                               </select>
                             </td>
                             <td>
-                              <input type="text" className="form-input" value={item.hsnCode} onChange={e => handleItemChange(i, 'hsnCode', e.target.value)} style={{ padding: '8px 10px', fontSize: 13 }} />
+                              <input type="text" className="form-input" value={item.hsnCode} onChange={e => handleItemChange(i, 'hsnCode', e.target.value)} style={{ padding: '8px 10px', fontSize: 13, width: '100%', minWidth: '60px' }} />
                             </td>
                             <td>
-                              <input type="text" className="form-input" value={item.uom} onChange={e => handleItemChange(i, 'uom', e.target.value)} style={{ padding: '8px 10px', fontSize: 13 }} />
+                              <input type="text" className="form-input" value={item.uom} onChange={e => handleItemChange(i, 'uom', e.target.value)} style={{ padding: '8px 10px', fontSize: 13, width: '100%', minWidth: '50px' }} />
                             </td>
                             <td>
-                              <input type="number" className="form-input" value={item.quantity} onChange={e => handleItemChange(i, 'quantity', e.target.value)} min="1" style={{ padding: '8px 10px', fontSize: 13 }} required />
+                              <input type="number" className="form-input" value={item.quantity} onChange={e => handleItemChange(i, 'quantity', e.target.value)} min="1" style={{ padding: '8px 10px', fontSize: 13, width: '100%', minWidth: '70px' }} required />
                             </td>
                             <td>
-                              <input type="number" className="form-input" value={item.sellingPrice} onChange={e => handleItemChange(i, 'sellingPrice', e.target.value)} min="0" step="0.01" style={{ padding: '8px 10px', fontSize: 13 }} required />
+                              <input type="number" className="form-input" value={item.sellingPrice} onChange={e => handleItemChange(i, 'sellingPrice', e.target.value)} min="0" step="0.01" style={{ padding: '8px 10px', fontSize: 13, width: '100%', minWidth: '80px' }} required />
                             </td>
                             <td style={{ textAlign: 'right', fontWeight: 600, fontSize: 14 }}>₹{item.total.toLocaleString('en-IN')}</td>
                             <td>
