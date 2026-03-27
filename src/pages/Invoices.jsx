@@ -563,16 +563,16 @@ export default function Invoices() {
                 {/* Editable Items */}
                 <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--primary-600)', fontSize: 12 }}>Items {selectedSale.isLocked ? '' : '(editable — you can change description, HSN, UOM, Qty, Rate)'}</div>
                 <div className="table-container" style={{ marginBottom: 16 }}>
-                  <table className="data-table" style={{ minWidth: 800 }}>
+                  <table className="data-table" style={{ minWidth: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ width: 45 }}>Sr.</th>
+                        <th style={{ width: 40 }}>Sr.</th>
                         <th>Description of Goods</th>
-                        <th style={{ width: 100 }}>HSN/SAC</th>
-                        <th style={{ width: 80 }}>UOM</th>
-                        <th style={{ width: 100 }}>QTY</th>
-                        <th style={{ width: 110 }}>RATE</th>
-                        <th style={{ width: 120, textAlign: 'right' }}>AMOUNT</th>
+                        <th style={{ width: 80 }}>HSN/SAC</th>
+                        <th style={{ width: 60 }}>UOM</th>
+                        <th style={{ width: 70 }}>QTY</th>
+                        <th style={{ width: 90 }}>RATE</th>
+                        <th style={{ width: 100, textAlign: 'right' }}>AMOUNT</th>
                       </tr>
                     </thead>
                     <tbody>

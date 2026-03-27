@@ -261,16 +261,16 @@ export default function Sales() {
 
                 <div style={{ border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                   <div className="table-container">
-                    <table className="data-table" style={{ marginBottom: 0, minWidth: 800 }}>
+                    <table className="data-table" style={{ marginBottom: 0, width: '100%', minWidth: '100%' }}>
                       <thead>
                         <tr>
                           <th>Product</th>
-                          <th style={{ width: 100 }}>HSN/SAC</th>
-                          <th style={{ width: 80 }}>UOM</th>
-                          <th style={{ width: 100 }}>Qty</th>
-                          <th style={{ width: 120 }}>Price (₹)</th>
-                          <th style={{ width: 120, textAlign: 'right' }}>Total</th>
-                          <th style={{ width: 50 }}></th>
+                          <th style={{ width: 80 }}>HSN/SAC</th>
+                          <th style={{ width: 60 }}>UOM</th>
+                          <th style={{ width: 70 }}>Qty</th>
+                          <th style={{ width: 90 }}>Price (₹)</th>
+                          <th style={{ width: 90, textAlign: 'right' }}>Total</th>
+                          <th style={{ width: 40 }}></th>
                         </tr>
                       </thead>
                       <tbody>
