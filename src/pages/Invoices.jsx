@@ -563,28 +563,28 @@ export default function Invoices() {
                 {/* Editable Items */}
                 <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--primary-600)', fontSize: 12 }}>Items {selectedSale.isLocked ? '' : '(editable — you can change description, HSN, UOM, Qty, Rate)'}</div>
                 <div className="table-container" style={{ marginBottom: 16 }}>
-                  <table className="data-table" style={{ minWidth: 650 }}>
+                  <table className="data-table" style={{ minWidth: 800 }}>
                     <thead>
                       <tr>
-                        <th style={{ width: 35 }}>Sr.</th>
+                        <th style={{ width: 45 }}>Sr.</th>
                         <th>Description of Goods</th>
-                        <th style={{ width: 70 }}>HSN/SAC</th>
-                        <th style={{ width: 55 }}>UOM</th>
-                        <th style={{ width: 55 }}>QTY</th>
-                        <th style={{ width: 80 }}>RATE</th>
-                        <th style={{ width: 90, textAlign: 'right' }}>AMOUNT</th>
+                        <th style={{ width: 100 }}>HSN/SAC</th>
+                        <th style={{ width: 80 }}>UOM</th>
+                        <th style={{ width: 100 }}>QTY</th>
+                        <th style={{ width: 110 }}>RATE</th>
+                        <th style={{ width: 120, textAlign: 'right' }}>AMOUNT</th>
                       </tr>
                     </thead>
                     <tbody>
                       {editData.items.map((item, i) => (
                         <tr key={i}>
                           <td style={{ textAlign: 'center' }}>{i + 1}]</td>
-                          <td><input className="form-input" style={{ fontSize: 11, padding: '4px 6px' }} value={item.description} onChange={e => updateEditItem(i, 'description', e.target.value)} disabled={selectedSale.isLocked} /></td>
-                          <td><input className="form-input" style={{ fontSize: 11, padding: '4px 6px' }} value={item.hsnCode} onChange={e => updateEditItem(i, 'hsnCode', e.target.value)} placeholder="e.g. 9987" disabled={selectedSale.isLocked} /></td>
-                          <td><input className="form-input" style={{ fontSize: 11, padding: '4px 6px' }} value={item.uom} onChange={e => updateEditItem(i, 'uom', e.target.value)} disabled={selectedSale.isLocked} /></td>
-                          <td><input type="number" className="form-input" style={{ fontSize: 11, padding: '4px 6px' }} value={item.quantity} onChange={e => updateEditItem(i, 'quantity', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} /></td>
-                          <td><input type="number" className="form-input" style={{ fontSize: 11, padding: '4px 6px' }} value={item.rate} onChange={e => updateEditItem(i, 'rate', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} /></td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, fontSize: 12 }}>₹{Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+                          <td><input className="form-input" style={{ fontSize: 13, padding: '8px 10px' }} value={item.description} onChange={e => updateEditItem(i, 'description', e.target.value)} disabled={selectedSale.isLocked} /></td>
+                          <td><input className="form-input" style={{ fontSize: 13, padding: '8px 10px' }} value={item.hsnCode} onChange={e => updateEditItem(i, 'hsnCode', e.target.value)} placeholder="e.g. 9987" disabled={selectedSale.isLocked} /></td>
+                          <td><input className="form-input" style={{ fontSize: 13, padding: '8px 10px' }} value={item.uom} onChange={e => updateEditItem(i, 'uom', e.target.value)} disabled={selectedSale.isLocked} /></td>
+                          <td><input type="number" className="form-input" style={{ fontSize: 13, padding: '8px 10px' }} value={item.quantity} onChange={e => updateEditItem(i, 'quantity', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} /></td>
+                          <td><input type="number" className="form-input" style={{ fontSize: 13, padding: '8px 10px' }} value={item.rate} onChange={e => updateEditItem(i, 'rate', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} /></td>
+                          <td style={{ textAlign: 'right', fontWeight: 700, fontSize: 14 }}>₹{Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -261,23 +261,23 @@ export default function Sales() {
 
                 <div style={{ border: '1px solid var(--gray-200)', borderRadius: 'var(--radius-md)', overflow: 'hidden' }}>
                   <div className="table-container">
-                    <table className="data-table" style={{ marginBottom: 0, minWidth: 400 }}>
+                    <table className="data-table" style={{ marginBottom: 0, minWidth: 800 }}>
                       <thead>
                         <tr>
                           <th>Product</th>
-                          <th style={{ width: 80 }}>HSN/SAC</th>
-                          <th style={{ width: 60 }}>UOM</th>
-                          <th style={{ width: 80 }}>Qty</th>
-                          <th style={{ width: 100 }}>Price (₹)</th>
-                          <th style={{ width: 100, textAlign: 'right' }}>Total</th>
-                          <th style={{ width: 40 }}></th>
+                          <th style={{ width: 100 }}>HSN/SAC</th>
+                          <th style={{ width: 80 }}>UOM</th>
+                          <th style={{ width: 100 }}>Qty</th>
+                          <th style={{ width: 120 }}>Price (₹)</th>
+                          <th style={{ width: 120, textAlign: 'right' }}>Total</th>
+                          <th style={{ width: 50 }}></th>
                         </tr>
                       </thead>
                       <tbody>
                         {items.map((item, i) => (
                           <tr key={i}>
                             <td>
-                              <select className="form-select" value={item.productId} onChange={e => handleProductChange(i, e.target.value)} required style={{ fontSize: 12, padding: '6px 8px' }}>
+                              <select className="form-select" value={item.productId} onChange={e => handleProductChange(i, e.target.value)} required style={{ fontSize: 13, padding: '8px 10px' }}>
                                 <option value="">Select</option>
                                 {products.map(p => (
                                   <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>
@@ -285,21 +285,21 @@ export default function Sales() {
                               </select>
                             </td>
                             <td>
-                              <input type="text" className="form-input" value={item.hsnCode} onChange={e => handleItemChange(i, 'hsnCode', e.target.value)} style={{ padding: '6px 8px', fontSize: 12 }} />
+                              <input type="text" className="form-input" value={item.hsnCode} onChange={e => handleItemChange(i, 'hsnCode', e.target.value)} style={{ padding: '8px 10px', fontSize: 13 }} />
                             </td>
                             <td>
-                              <input type="text" className="form-input" value={item.uom} onChange={e => handleItemChange(i, 'uom', e.target.value)} style={{ padding: '6px 8px', fontSize: 12 }} />
+                              <input type="text" className="form-input" value={item.uom} onChange={e => handleItemChange(i, 'uom', e.target.value)} style={{ padding: '8px 10px', fontSize: 13 }} />
                             </td>
                             <td>
-                              <input type="number" className="form-input" value={item.quantity} onChange={e => handleItemChange(i, 'quantity', e.target.value)} min="1" style={{ padding: '6px 8px', fontSize: 12 }} required />
+                              <input type="number" className="form-input" value={item.quantity} onChange={e => handleItemChange(i, 'quantity', e.target.value)} min="1" style={{ padding: '8px 10px', fontSize: 13 }} required />
                             </td>
                             <td>
-                              <input type="number" className="form-input" value={item.sellingPrice} onChange={e => handleItemChange(i, 'sellingPrice', e.target.value)} min="0" step="0.01" style={{ padding: '6px 8px', fontSize: 12 }} required />
+                              <input type="number" className="form-input" value={item.sellingPrice} onChange={e => handleItemChange(i, 'sellingPrice', e.target.value)} min="0" step="0.01" style={{ padding: '8px 10px', fontSize: 13 }} required />
                             </td>
-                            <td style={{ textAlign: 'right', fontWeight: 600, fontSize: 13 }}>₹{item.total.toLocaleString('en-IN')}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600, fontSize: 14 }}>₹{item.total.toLocaleString('en-IN')}</td>
                             <td>
                               {items.length > 1 && (
-                                <button type="button" className="btn btn-icon" onClick={() => removeItem(i)} style={{ color: 'var(--danger-500)' }}><X size={16} /></button>
+                                <button type="button" className="btn btn-icon" onClick={() => removeItem(i)} style={{ color: 'var(--danger-500)' }}><X size={18} /></button>
                               )}
                             </td>
                           </tr>
