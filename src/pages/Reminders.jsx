@@ -1,5 +1,5 @@
-import { useMemo } from 'react';
-import { Bell, AlertTriangle, Package, Users, Clock, Mail, Phone, MessageSquare, ArrowRight } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Bell, AlertTriangle, Package, Users, Clock, Mail, Phone, MessageSquare, ArrowRight, Plus, Trash2, CheckCircle, Calendar } from 'lucide-react';
 import useStore from '../store/useStore';
 
 export default function Reminders() {
@@ -10,11 +10,19 @@ export default function Reminders() {
   const addToast = useStore(s => s.addToast);
   const customers = useStore(s => s.customers);
   const products = useStore(s => s.products);
+  const customReminders = useStore(s => s.customReminders) || [];
+  const addCustomReminder = useStore(s => s.addCustomReminder);
+  const completeCustomReminder = useStore(s => s.completeCustomReminder);
+  const deleteCustomReminder = useStore(s => s.deleteCustomReminder);
+
+  const [showModal, setShowModal] = useState(false);
+  const [newReminder, setNewReminder] = useState({ text: '', type: 'Call Client', targetDate: '', targetTime: '' });
 
   const lowStock = getLowStockProducts();
   const inactive = getInactiveCustomers();
   const pendingEnquiries = getPendingEnquiries();
-  const totalAlerts = lowStock.length + inactive.length + pendingEnquiries.length;
+  const pendingCustoms = customReminders.filter(r => r.status === 'pending');
+  const totalAlerts = lowStock.length + inactive.length + pendingEnquiries.length + pendingCustoms.length;
 
   const sendFollowUp = (customer) => {
     const subject = encodeURIComponent(`Follow-up - ${companyInfo.name}`);
@@ -35,8 +43,27 @@ export default function Reminders() {
     return `${diff} days ago`;
   };
 
+  const handleAddReminder = (e) => {
+    e.preventDefault();
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      Notification.requestPermission();
+    }
+    if (!newReminder.text || !newReminder.targetDate) return addToast('Please fill all required fields', 'error');
+    addCustomReminder(newReminder);
+    setShowModal(false);
+    setNewReminder({ text: '', type: 'Call Client', targetDate: '', targetTime: '' });
+    addToast('Reminder scheduled successfully', 'success');
+  };
+
   return (
     <div className="slide-up">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
+        <h2>Reminders & Follow-Ups</h2>
+        <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+          <Plus size={18} /> Add Custom Reminder
+        </button>
+      </div>
+
       {/* Summary */}
       <div className="stat-grid">
         <div className="stat-card">
@@ -68,6 +95,68 @@ export default function Reminders() {
             <div className="stat-value">{pendingEnquiries.length}</div>
             <div className="stat-change" style={{ color: 'var(--gray-500)' }}>Requires quotation</div>
           </div>
+        </div>
+      </div>
+
+      {/* Custom Reminders */}
+      <div className="card" style={{ marginBottom: 24, borderLeft: '4px solid var(--primary-500)' }}>
+        <div className="card-header">
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Calendar size={18} style={{ color: 'var(--primary-600)' }} />
+            My Scheduled Reminders
+          </h3>
+          {pendingCustoms.length > 0 && <span className="badge badge-primary">{pendingCustoms.length} Pending</span>}
+        </div>
+        <div className="card-body no-padding">
+          {customReminders.length === 0 ? (
+            <div className="empty-state">
+              <Bell size={40} />
+              <h4>No custom reminders set</h4>
+              <p>Schedule order placements or client calls</p>
+            </div>
+          ) : (
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Task / Description</th>
+                    <th>Type</th>
+                    <th>Scheduled For</th>
+                    <th>Status</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {customReminders.sort((a,b) => new Date(a.targetDate) - new Date(b.targetDate)).map(r => (
+                    <tr key={r.id} style={{ opacity: r.status === 'completed' ? 0.6 : 1 }}>
+                      <td style={{ fontWeight: 500 }}>{r.text}</td>
+                      <td><span className="badge badge-info">{r.type}</span></td>
+                      <td>
+                        <div style={{ fontWeight: 600, color: r.status === 'pending' && new Date() > new Date(`${r.targetDate}T${r.targetTime||'00:00'}`) ? 'var(--danger-600)' : 'inherit' }}>
+                          {new Date(r.targetDate).toLocaleDateString()} {r.targetTime && `at ${r.targetTime}`}
+                        </div>
+                      </td>
+                      <td>
+                        {r.status === 'completed' ? <span className="badge badge-success">Completed</span> : <span className="badge badge-warning">Pending</span>}
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <div className="btn-group" style={{ justifyContent: 'flex-end' }}>
+                          {r.status === 'pending' && (
+                            <button className="btn btn-sm btn-success" onClick={() => completeCustomReminder(r.id)} title="Mark as Done">
+                              <CheckCircle size={14} />
+                            </button>
+                          )}
+                          <button className="btn btn-sm btn-outline" style={{ color: 'var(--danger-500)' }} onClick={() => deleteCustomReminder(r.id)} title="Delete">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -241,6 +330,49 @@ export default function Reminders() {
           )}
         </div>
       </div>
+
+      {showModal && (
+        <div className="modal-overlay">
+          <div className="modal" style={{ maxWidth: 400 }}>
+            <div className="modal-header">
+              <h2>Schedule Reminder</h2>
+            </div>
+            <form onSubmit={handleAddReminder}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Reminder Type</label>
+                  <select className="form-input" value={newReminder.type} onChange={e => setNewReminder({...newReminder, type: e.target.value})}>
+                    <option value="Call Client">Call Client</option>
+                    <option value="Call Supplier">Call Supplier</option>
+                    <option value="Place Order">Place Order</option>
+                    <option value="Follow up">Follow up</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Description / Details *</label>
+                  <textarea className="form-input" required rows={3} placeholder="e.g. Call Krishna to restock Acid" value={newReminder.text} onChange={e => setNewReminder({...newReminder, text: e.target.value})} />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div className="form-group">
+                    <label>Date *</label>
+                    <input type="date" className="form-input" required min={new Date().toISOString().split('T')[0]} value={newReminder.targetDate} onChange={e => setNewReminder({...newReminder, targetDate: e.target.value})} />
+                  </div>
+                  <div className="form-group">
+                    <label>Time</label>
+                    <input type="time" className="form-input" value={newReminder.targetTime} onChange={e => setNewReminder({...newReminder, targetTime: e.target.value})} />
+                  </div>
+                </div>
+                <p style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 8 }}>Note: You must keep this app open in your browser to receive desktop/phone notifications when the time arrives.</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Schedule Reminder</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

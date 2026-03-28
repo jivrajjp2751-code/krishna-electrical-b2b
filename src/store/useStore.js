@@ -65,7 +65,7 @@ const useStore = create((set, get) => ({
       const serverData = await fetchAllData();
       if (serverData && typeof serverData === 'object') {
         const updates = {};
-        const keys = ['products', 'suppliers', 'customers', 'purchases', 'sales', 'users', 'companyInfo', 'enquiries'];
+        const keys = ['products', 'suppliers', 'customers', 'purchases', 'sales', 'users', 'companyInfo', 'enquiries', 'customReminders'];
         keys.forEach(key => {
           if (serverData[key] !== undefined) {
             updates[key] = serverData[key];
@@ -308,6 +308,42 @@ const useStore = create((set, get) => ({
   toggleSidebar: () => set(state => ({ sidebarCollapsed: !state.sidebarCollapsed })),
   toggleMobileSidebar: () => set(state => ({ sidebarMobileOpen: !state.sidebarMobileOpen })),
   closeMobileSidebar: () => set({ sidebarMobileOpen: false }),
+
+  // ── Custom Reminders ──────────────────────────
+  customReminders: loadState('customReminders', []),
+  activeAlarms: [], // In-memory alarms currently ringing
+  triggerAlarm: (reminder) => {
+    set(state => {
+      // prevent duplicate triggers
+      if (state.activeAlarms.find(a => a.id === reminder.id)) return state;
+      return { activeAlarms: [...state.activeAlarms, reminder] };
+    });
+  },
+  dismissAlarm: (id) => {
+    set(state => ({ activeAlarms: state.activeAlarms.filter(a => a.id !== id) }));
+  },
+  addCustomReminder: (reminder) => {
+    const newReminder = { ...reminder, id: generateId(), createdAt: new Date().toISOString(), status: 'pending' };
+    set(state => {
+      const updated = [...state.customReminders, newReminder];
+      saveBoth('customReminders', updated);
+      return { customReminders: updated };
+    });
+  },
+  completeCustomReminder: (id) => {
+    set(state => {
+      const updated = state.customReminders.map(r => r.id === id ? { ...r, status: 'completed' } : r);
+      saveBoth('customReminders', updated);
+      return { customReminders: updated };
+    });
+  },
+  deleteCustomReminder: (id) => {
+    set(state => {
+      const updated = state.customReminders.filter(r => r.id !== id);
+      saveBoth('customReminders', updated);
+      return { customReminders: updated };
+    });
+  },
 
   // ── Settings ──────────────────────────────────
   companyInfo: loadState('companyInfo', defaultCompanyInfo),

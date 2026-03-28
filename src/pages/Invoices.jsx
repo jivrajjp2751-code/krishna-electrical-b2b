@@ -2,7 +2,8 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FileText, Download, Mail, Search, ArrowLeft, Printer, MessageCircle, Edit2, Save } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import 'jspdf-autotable';
+import { applyPlugin } from 'jspdf-autotable';
+applyPlugin(jsPDF);
 import useStore from '../store/useStore';
 
 export default function Invoices() {
@@ -57,6 +58,7 @@ export default function Invoices() {
             uom: item.uom || product?.unit || 'nos',
             quantity: item.quantity,
             rate: item.sellingPrice,
+            discount: item.discount || 0,
             amount: item.total,
           };
         });
@@ -101,8 +103,12 @@ export default function Invoices() {
     setEditData(d => {
       const items = [...d.items];
       items[i] = { ...items[i], [field]: value };
-      if (field === 'quantity' || field === 'rate') {
-        items[i].amount = (Number(items[i].quantity) || 0) * (Number(items[i].rate) || 0);
+      if (['quantity', 'rate', 'discount'].includes(field)) {
+        const qty = Number(items[i].quantity) || 0;
+        const rate = Number(items[i].rate) || 0;
+        const disc = Number(items[i].discount) || 0;
+        const total = qty * rate;
+        items[i].amount = total - (total * disc / 100);
       }
       return { ...d, items };
     });
@@ -114,11 +120,11 @@ export default function Invoices() {
   // ═══════════════════════════════════════════════
   //  PDF GENERATION — matches exact image format
   // ═══════════════════════════════════════════════
-  const generatePDF = (sale, data) => {
+  const buildPDF = (sale, data) => {
     const customer = customers.find(c => c.id === sale.customerId);
     const items = data?.items || sale.items.map(item => {
       const product = products.find(p => p.id === item.productId);
-      return { description: product?.name || '', hsnCode: item.hsnCode || product?.hsnCode || '', uom: item.uom || product?.unit || 'nos', quantity: item.quantity, rate: item.sellingPrice, amount: item.total };
+      return { description: product?.name || '', hsnCode: item.hsnCode || product?.hsnCode || '', uom: item.uom || product?.unit || 'nos', quantity: item.quantity, rate: item.sellingPrice, discount: item.discount || 0, amount: item.total };
     });
 
     const doc = new jsPDF();
@@ -192,22 +198,26 @@ export default function Invoices() {
     doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 4, y + 14);
 
     // Delivery Note | Mode/Terms
-    doc.rect(rx, y + 18, rightW / 2, 16);
-    doc.rect(rx + rightW / 2, y + 18, rightW / 2, 16);
-    doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
-    doc.text('Delivery', rx + 3, y + 25);
-    doc.text('Note.', rx + 3, y + 29);
-    doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 27);
-    if (data?.deliveryNote) { doc.setFont('helvetica', 'normal'); doc.text(data.deliveryNote, rx + 20, y + 27); }
-    if (data?.paymentTerms) { doc.setFont('helvetica', 'normal'); doc.text(data.paymentTerms, rx + rightW / 2 + 3, y + 32); }
+    if (data?.deliveryNote || data?.paymentTerms) {
+      doc.rect(rx, y + 18, rightW / 2, 16);
+      doc.rect(rx + rightW / 2, y + 18, rightW / 2, 16);
+      doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
+      if (data?.deliveryNote) { doc.text('Delivery Note.', rx + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(data.deliveryNote, rx + 3, y + 30); }
+      if (data?.paymentTerms) { doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(data.paymentTerms, rx + rightW / 2 + 3, y + 30); }
+    } else {
+      doc.rect(rx, y + 18, rightW, 16);
+    }
 
     // Suppliers Ref | Other References
-    doc.rect(rx, y + 34, rightW / 2, 18);
-    doc.rect(rx + rightW / 2, y + 34, rightW / 2, 18);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Suppliers Ref.', rx + 3, y + 42);
-    doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 40);
-    if (data?.otherRef) { doc.setFont('helvetica', 'normal'); doc.text(data.otherRef, rx + rightW / 2 + 3, y + 46); }
+    if (data?.suppliersRef || data?.otherRef) {
+      doc.rect(rx, y + 34, rightW / 2, 18);
+      doc.rect(rx + rightW / 2, y + 34, rightW / 2, 18);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+      if (data?.suppliersRef) { doc.text('Suppliers Ref.', rx + 3, y + 40); doc.setFont('helvetica', 'normal'); doc.text(data.suppliersRef, rx + 3, y + 46); }
+      if (data?.otherRef) { doc.setFont('helvetica', 'bold'); doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 40); doc.setFont('helvetica', 'normal'); doc.text(data.otherRef, rx + rightW / 2 + 3, y + 46); }
+    } else {
+      doc.rect(rx, y + 34, rightW, 18);
+    }
 
     y += r1h;
 
@@ -223,21 +233,26 @@ export default function Invoices() {
     caddr.forEach(l => { doc.text(l, m + 3, cay); cay += 3.5; });
 
     // Right: Buyers Order No | Dated
-    doc.rect(rx, y, rightW / 2, 16);
-    doc.rect(rx + rightW / 2, y, rightW / 2, 16);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-    doc.text('Buyers Order No.', rx + 3, y + 7);
-    doc.text('Dated', rx + rightW / 2 + 3, y + 7);
-    if (data?.buyersOrderNo) { doc.setFont('helvetica', 'bold'); doc.text(data.buyersOrderNo, rx + 3, y + 12); }
-    if (data?.buyersOrderDate) { doc.setFont('helvetica', 'bold'); doc.text(data.buyersOrderDate, rx + rightW / 2 + 3, y + 12); }
+    if (data?.buyersOrderNo || data?.buyersOrderDate) {
+      doc.rect(rx, y, rightW / 2, 16);
+      doc.rect(rx + rightW / 2, y, rightW / 2, 16);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+      if (data?.buyersOrderNo) { doc.text('Buyers Order No.', rx + 3, y + 7); doc.text(data.buyersOrderNo, rx + 3, y + 12); }
+      if (data?.buyersOrderDate) { doc.text('Dated', rx + rightW / 2 + 3, y + 7); doc.text(data.buyersOrderDate, rx + rightW / 2 + 3, y + 12); }
+    } else {
+      doc.rect(rx, y, rightW, 16);
+    }
 
     // Despatch | Delivery Note Date
-    doc.rect(rx, y + 16, rightW / 2, 16);
-    doc.rect(rx + rightW / 2, y + 16, rightW / 2, 16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Despatch', rx + 3, y + 23);
-    doc.text('Document No.', rx + 3, y + 27);
-    doc.text('Delivery Note Date', rx + rightW / 2 + 3, y + 25);
+    if (data?.despatchDocNo || data?.deliveryNoteDate) {
+      doc.rect(rx, y + 16, rightW / 2, 16);
+      doc.rect(rx + rightW / 2, y + 16, rightW / 2, 16);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+      if (data?.despatchDocNo) { doc.text('Despatch Doc No.', rx + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.text(data.despatchDocNo, rx + 3, y + 30); }
+      if (data?.deliveryNoteDate) { doc.setFont('helvetica', 'bold'); doc.text('Delivery Note Date', rx + rightW / 2 + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.text(data.deliveryNoteDate, rx + rightW / 2 + 3, y + 30); }
+    } else {
+      doc.rect(rx, y + 16, rightW, 16);
+    }
 
     y += r2h;
 
@@ -249,24 +264,26 @@ export default function Invoices() {
       item.uom,
       Number(item.quantity).toFixed(2),
       Number(item.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
+      item.discount ? `${item.discount}%` : '-',
       Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
     ]);
 
     doc.autoTable({
       startY: y,
-      head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']],
+      head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'DISC%', 'AMOUNT']],
       body: itemRows,
       theme: 'grid',
       headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 7.5, fontStyle: 'bold', lineWidth: 0.4, lineColor: [0, 0, 0], halign: 'center', cellPadding: 3 },
       styles: { fontSize: 7.5, cellPadding: 3, lineWidth: 0.4, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
       columnStyles: {
-        0: { cellWidth: 14, halign: 'center' },
-        1: { cellWidth: 62 },
-        2: { cellWidth: 18, halign: 'center' },
-        3: { cellWidth: 15, halign: 'center' },
-        4: { cellWidth: 18, halign: 'center' },
-        5: { cellWidth: 25, halign: 'right' },
-        6: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 54 },
+        2: { cellWidth: 15, halign: 'center' },
+        3: { cellWidth: 14, halign: 'center' },
+        4: { cellWidth: 15, halign: 'center' },
+        5: { cellWidth: 24, halign: 'right' },
+        6: { cellWidth: 14, halign: 'center' },
+        7: { cellWidth: 34, halign: 'right', fontStyle: 'bold' },
       },
       margin: { left: m, right: m },
     });
@@ -274,7 +291,9 @@ export default function Invoices() {
     let ty = doc.lastAutoTable.finalY;
 
     // ── CENVAT + TOTALS SECTION ──
+    const rawSubtotal = items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.rate) || 0), 0);
     const subtotal = items.reduce((s, it) => s + Number(it.amount), 0);
+    const totalDiscountAmt = rawSubtotal - subtotal;
     const cgst = subtotal * halfGst / 100;
     const sgst = subtotal * halfGst / 100;
     const totalBeforeRound = subtotal + cgst + sgst;
@@ -282,7 +301,8 @@ export default function Invoices() {
     const roundOff = grandTotal - totalBeforeRound;
 
     // CENVAT text on left, totals on right
-    const totBoxH = 48;
+    const hasDiscount = totalDiscountAmt > 0;
+    const totBoxH = hasDiscount ? 56 : 48;
     const totLeftW = cw * 0.55;
     const totRightW = cw * 0.45;
     doc.rect(m, ty, totLeftW, totBoxH);
@@ -307,7 +327,8 @@ export default function Invoices() {
       doc.text(val, trr, try1, { align: 'right' });
       try1 += 8;
     };
-    drawTotLine('Sub Total', subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), false);
+    drawTotLine('Sub Total', rawSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), false);
+    if (hasDiscount) { const discPct = rawSubtotal > 0 ? ((totalDiscountAmt / rawSubtotal) * 100).toFixed(1) : '0'; drawTotLine(`Discount @ ${discPct}%`, `- ${totalDiscountAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, true); }
     drawTotLine(`CGST @ ${halfGst}%`, cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
     drawTotLine(`SGST @  ${halfGst}%`, sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
     drawTotLine('Round off', roundOff.toFixed(2), false);
@@ -390,25 +411,40 @@ export default function Invoices() {
     doc.text('Client Sign.', m + 3, endY + 16);
     doc.text(`FOR   ${companyInfo.name.replace('M/S. ', '')}`, m + cw * 0.55, endY + 10);
 
+    return doc;
+  };
+
+  const generatePDF = (sale, data) => {
+    const doc = buildPDF(sale, data);
     doc.save(`Invoice_${sale.invoiceNo}.pdf`);
     addToast(`Invoice ${sale.invoiceNo} downloaded`, 'success');
   };
 
-  const sendWhatsApp = (sale) => {
+  const shareInvoiceWithFile = async (sale, method) => {
+    const doc = buildPDF(sale, null);
+    const filename = `Invoice_${sale.invoiceNo}.pdf`;
+    
     const customer = customers.find(c => c.id === sale.customerId);
     const phone = (customer?.phone || '').replace(/[^0-9]/g, '');
-    const text = encodeURIComponent(
-      `*Tax Invoice: ${sale.invoiceNo}*\nDate: ${new Date(sale.date).toLocaleDateString('en-IN')}\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nFrom: ${companyInfo.name}\nMob: ${companyInfo.phone}`
-    );
-    window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
+
+    doc.save(filename);
+    addToast('PDF Downloaded! Please attach it to your message manually.', 'info');
+    
+    setTimeout(() => {
+      if (method === 'whatsapp') {
+        const text = encodeURIComponent(`*Tax Invoice: ${sale.invoiceNo}*\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nPDF is attached separately.\n\nFrom: ${companyInfo.name}\nMob: ${companyInfo.phone}`);
+        window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
+      } else {
+        const subject = encodeURIComponent(`Invoice ${sale.invoiceNo} - ${companyInfo.name}`);
+        const body = encodeURIComponent(`Dear Sir/Madam,\n\nPlease find your Invoice PDF attached.\n\nInvoice: ${sale.invoiceNo}\nAmount: Rs.${sale.totalAmount.toLocaleString('en-IN')}\n\nRegards,\n${companyInfo.name}\nMob: ${companyInfo.phone}`);
+        const toEmail = customer?.email || '';
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`, '_blank');
+      }
+    }, 500);
   };
 
-  const sendEmail = (sale) => {
-    const customer = customers.find(c => c.id === sale.customerId);
-    const subject = encodeURIComponent(`Invoice ${sale.invoiceNo} - ${companyInfo.name}`);
-    const body = encodeURIComponent(`Dear ${customer?.contactPerson || 'Sir/Madam'},\n\nInvoice: ${sale.invoiceNo}\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\nDate: ${new Date(sale.date).toLocaleDateString('en-IN')}\n\nRegards,\n${companyInfo.name}\nMob: ${companyInfo.phone}`);
-    window.open(`mailto:${customer?.email || ''}?subject=${subject}&body=${body}`);
-  };
+  const sendWhatsApp = (sale) => shareInvoiceWithFile(sale, 'whatsapp');
+  const sendEmail = (sale) => shareInvoiceWithFile(sale, 'email');
 
   const halfGst = getHalfGst();
 
@@ -561,46 +597,62 @@ export default function Invoices() {
                 </div>
 
                 {/* Editable Items */}
-                <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--primary-600)', fontSize: 12 }}>Items {selectedSale.isLocked ? '' : '(editable — you can change description, HSN, UOM, Qty, Rate)'}</div>
-                <div className="table-container" style={{ marginBottom: 16 }}>
-                  <table className="data-table" style={{ minWidth: '100%' }}>
-                    <thead>
-                      <tr>
-                        <th style={{ width: '5%' }}>Sr.</th>
-                        <th style={{ width: '31%' }}>Description of Goods</th>
-                        <th style={{ width: '12%' }}>HSN/SAC</th>
-                        <th style={{ width: '10%' }}>UOM</th>
-                        <th style={{ width: '12%' }}>QTY</th>
-                        <th style={{ width: '15%' }}>RATE</th>
-                        <th style={{ width: '15%', textAlign: 'right' }}>AMOUNT</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {editData.items.map((item, i) => (
-                        <tr key={i}>
-                          <td style={{ textAlign: 'center' }}>{i + 1}]</td>
-                          <td><input className="form-input" style={{ fontSize: 13, padding: '8px 10px', width: '100%', minWidth: '120px' }} value={item.description} onChange={e => updateEditItem(i, 'description', e.target.value)} disabled={selectedSale.isLocked} /></td>
-                          <td><input className="form-input" style={{ fontSize: 13, padding: '8px 10px', width: '100%', minWidth: '60px' }} value={item.hsnCode} onChange={e => updateEditItem(i, 'hsnCode', e.target.value)} placeholder="e.g. 9987" disabled={selectedSale.isLocked} /></td>
-                          <td><input className="form-input" style={{ fontSize: 13, padding: '8px 10px', width: '100%', minWidth: '50px' }} value={item.uom} onChange={e => updateEditItem(i, 'uom', e.target.value)} disabled={selectedSale.isLocked} /></td>
-                          <td><input type="number" className="form-input" style={{ fontSize: 13, padding: '8px 10px', width: '100%', minWidth: '70px' }} value={item.quantity} onChange={e => updateEditItem(i, 'quantity', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} /></td>
-                          <td><input type="number" className="form-input" style={{ fontSize: 13, padding: '8px 10px', width: '100%', minWidth: '80px' }} value={item.rate} onChange={e => updateEditItem(i, 'rate', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} /></td>
-                          <td style={{ textAlign: 'right', fontWeight: 700, fontSize: 14 }}>₹{Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div style={{ fontWeight: 600, marginBottom: 8, color: 'var(--primary-600)', fontSize: 12 }}>Items {selectedSale.isLocked ? '' : '(editable)'}</div>
+                <div style={{ marginBottom: 16 }}>
+                  {editData.items.map((item, i) => (
+                    <div key={i} style={{ border: '1px solid var(--gray-200)', borderRadius: 8, padding: 12, marginBottom: 10, background: 'var(--gray-50)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <strong style={{ fontSize: 12, color: 'var(--primary-600)' }}>Item {i + 1}</strong>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 3fr) 1fr', gap: 8, marginBottom: 8 }}>
+                        <div>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>Description</label>
+                          <input className="form-input" style={{ fontSize: 13 }} value={item.description} onChange={e => updateEditItem(i, 'description', e.target.value)} disabled={selectedSale.isLocked} placeholder="Description" />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>HSN/SAC</label>
+                          <input className="form-input" style={{ fontSize: 13 }} value={item.hsnCode} onChange={e => updateEditItem(i, 'hsnCode', e.target.value)} disabled={selectedSale.isLocked} placeholder="HSN" />
+                        </div>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                        <div>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>UOM</label>
+                          <input className="form-input" style={{ fontSize: 13 }} value={item.uom} onChange={e => updateEditItem(i, 'uom', e.target.value)} disabled={selectedSale.isLocked} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>QTY</label>
+                          <input type="number" className="form-input" style={{ fontSize: 13 }} value={item.quantity} onChange={e => updateEditItem(i, 'quantity', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>RATE (₹)</label>
+                          <input type="number" className="form-input" style={{ fontSize: 13 }} value={item.rate} onChange={e => updateEditItem(i, 'rate', e.target.value)} min="0" step="0.01" disabled={selectedSale.isLocked} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>DISC(%)</label>
+                          <input type="number" className="form-input" style={{ fontSize: 13 }} value={item.discount || ''} onChange={e => updateEditItem(i, 'discount', e.target.value)} min="0" max="100" placeholder="0" disabled={selectedSale.isLocked} />
+                        </div>
+                        <div>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>AMOUNT</label>
+                          <div style={{ fontSize: 14, fontWeight: 700, padding: '8px 0', color: 'var(--primary-700)' }}>₹{Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 })}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
                 {/* Totals Preview */}
                 {(() => {
+                  const rawSub = editData.items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.rate) || 0), 0);
                   const sub = editData.items.reduce((s, it) => s + Number(it.amount), 0);
+                  const discAmt = rawSub - sub;
                   const c = sub * halfGst / 100;
                   const sg = sub * halfGst / 100;
                   const tot = Math.round(sub + c + sg);
                   return (
                     <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
                       <div style={{ width: 280, fontSize: 12 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span>Sub Total</span><span>₹{sub.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span>Sub Total</span><span>₹{rawSub.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
+                        {discAmt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)', color: '#dc2626' }}><strong>Discount @ {rawSub > 0 ? ((discAmt / rawSub) * 100).toFixed(1) : 0}%</strong><span>- ₹{discAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>}
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span><strong>CGST @ {halfGst}%</strong></span><span>₹{c.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span><strong>SGST @ {halfGst}%</strong></span><span>₹{sg.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span>Round off</span><span>{(tot - (sub + c + sg)).toFixed(2)}</span></div>
