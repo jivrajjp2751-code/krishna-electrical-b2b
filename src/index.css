@@ -1328,6 +1328,15 @@ textarea.form-input { resize: vertical; min-height: 70px; }
 }
 
 /* ══════════════════════════════════════════════════
+   RECHARTS OUTLINE FIX
+   ══════════════════════════════════════════════════ */
+
+.recharts-wrapper *:focus,
+.recharts-surface *:focus {
+  outline: none !important;
+}
+
+/* ══════════════════════════════════════════════════
    RESPONSIVE — COMPLETE MOBILE FIX
    ══════════════════════════════════════════════════ */
 
@@ -1411,9 +1420,56 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   .modal-header { padding: 14px 16px; }
   .modal-footer { padding: 12px 16px; }
 
-  .data-table { min-width: 500px; }
-  .data-table th { padding: 8px 10px; font-size: 9px; }
-  .data-table td { padding: 8px 10px; font-size: 12px; }
+  .data-table {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    border: none;
+    background: transparent;
+  }
+  .data-table thead {
+    display: none;
+  }
+  .data-table tbody {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .data-table tr {
+    display: flex;
+    flex-direction: column;
+    padding: 12px;
+    background: #fff;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+  }
+  .data-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    font-size: 13px;
+    text-align: right;
+    border: none;
+    border-bottom: 1px dashed var(--gray-100);
+  }
+  .data-table td:first-child {
+    font-size: 15px;
+    font-weight: 700;
+    border-bottom: 1px solid var(--gray-200);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+    color: var(--gray-800);
+    justify-content: flex-start;
+  }
+  .data-table td:last-child {
+    border-bottom: none;
+    padding-top: 8px;
+    margin-top: 4px;
+    justify-content: flex-end;
+  }
 }
 
 @media (max-width: 480px) {
