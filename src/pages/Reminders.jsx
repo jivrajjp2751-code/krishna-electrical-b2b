@@ -43,12 +43,20 @@ export default function Reminders() {
     return `${diff} days ago`;
   };
 
-  const handleAddReminder = (e) => {
+  const handleAddReminder = async (e) => {
     e.preventDefault();
-    if ('Notification' in window && Notification.permission !== 'granted') {
-      Notification.requestPermission();
-    }
     if (!newReminder.text || !newReminder.targetDate) return addToast('Please fill all required fields', 'error');
+
+    // Request notification permission if not yet granted
+    if ('Notification' in window && Notification.permission === 'default') {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        addToast('✅ Notifications enabled! You\'ll be reminded even outside the app.', 'success');
+      } else if (permission === 'denied') {
+        addToast('⚠️ Notifications blocked. Please enable them in your browser settings to receive reminders.', 'error');
+      }
+    }
+
     addCustomReminder(newReminder);
     setShowModal(false);
     setNewReminder({ text: '', type: 'Call Client', targetDate: '', targetTime: '' });
@@ -363,7 +371,9 @@ export default function Reminders() {
                     <input type="time" className="form-input" value={newReminder.targetTime} onChange={e => setNewReminder({...newReminder, targetTime: e.target.value})} />
                   </div>
                 </div>
-                <p style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 8 }}>Note: You must keep this app open in your browser to receive desktop/phone notifications when the time arrives.</p>
+                <p style={{ fontSize: 11, color: 'var(--gray-500)', marginTop: 8 }}>
+                  💡 <strong>Tip:</strong> Allow notifications when prompted to receive reminders even when you're not using the app. On mobile, add this site to your home screen for the best experience.
+                </p>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>

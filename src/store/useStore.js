@@ -327,6 +327,12 @@ const useStore = create((set, get) => ({
     set(state => {
       const updated = [...state.customReminders, newReminder];
       saveBoth('customReminders', updated);
+      // Notify SW about the new reminder
+      try {
+        if (navigator.serviceWorker?.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'ADD_REMINDER', payload: newReminder });
+        }
+      } catch { /* ignore */ }
       return { customReminders: updated };
     });
   },
@@ -334,6 +340,12 @@ const useStore = create((set, get) => ({
     set(state => {
       const updated = state.customReminders.map(r => r.id === id ? { ...r, status: 'completed' } : r);
       saveBoth('customReminders', updated);
+      // Notify SW
+      try {
+        if (navigator.serviceWorker?.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'COMPLETE_REMINDER', payload: { id } });
+        }
+      } catch { /* ignore */ }
       return { customReminders: updated };
     });
   },
@@ -341,6 +353,12 @@ const useStore = create((set, get) => ({
     set(state => {
       const updated = state.customReminders.filter(r => r.id !== id);
       saveBoth('customReminders', updated);
+      // Notify SW
+      try {
+        if (navigator.serviceWorker?.controller) {
+          navigator.serviceWorker.controller.postMessage({ type: 'REMOVE_REMINDER', payload: { id } });
+        }
+      } catch { /* ignore */ }
       return { customReminders: updated };
     });
   },
