@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { fetchAllData, saveData } from '../utils/api';
+import { hashPassword, verifyPassword, checkRateLimit, recordFailedAttempt, clearLoginAttempts } from '../utils/security';
 
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
 
@@ -35,6 +36,7 @@ const defaultPurchases = [];
 const defaultSales = [];
 const defaultEnquiries = [];
 
+// Default users — passwords get auto-hashed on first load
 const defaultUsers = [
   { id: '1', username: 'admin', password: 'admin123', name: 'Admin User', role: 'admin', email: 'krishna.electricalworks3@gmail.com' },
   { id: '2', username: 'staff', password: 'staff123', name: 'Staff User', role: 'staff', email: 'staff@krishnaelectrical.in' },
@@ -81,31 +83,88 @@ const useStore = create((set, get) => ({
     }
   },
 
-  // ── Auth ──────────────────────────────────────
+  // ── Auth (Secured with hashing + rate limiting) ──
   currentUser: loadState('currentUser', null),
   users: loadState('users', defaultUsers),
-  login: (username, password) => {
+  _passwordsMigrated: false,
+
+  // Auto-migrate plaintext passwords to hashed on first load
+  migratePasswords: async () => {
+    if (get()._passwordsMigrated) return;
     const users = get().users;
-    const user = users.find(u => u.username === username && u.password === password);
-    if (user) {
-      const userData = { ...user };
-      delete userData.password;
-      set({ currentUser: userData });
-      saveLocal('currentUser', userData);
-      return { success: true, user: userData };
+    let needsMigration = false;
+    const migrated = await Promise.all(users.map(async u => {
+      // If password is short / looks plaintext (not a 64-char hex hash), hash it
+      if (u.password && u.password.length < 64) {
+        needsMigration = true;
+        const hashed = await hashPassword(u.password, u.username);
+        return { ...u, password: hashed };
+      }
+      return u;
+    }));
+    if (needsMigration) {
+      saveBoth('users', migrated);
+      set({ users: migrated, _passwordsMigrated: true });
+      console.log('[Security] Passwords migrated to SHA-256 hashes');
+    } else {
+      set({ _passwordsMigrated: true });
     }
-    return { success: false, message: 'Invalid username or password' };
   },
+
+  login: async (username, password) => {
+    // Rate limiting check
+    const rateCheck = checkRateLimit(username);
+    if (!rateCheck.allowed) {
+      return { success: false, message: rateCheck.message };
+    }
+
+    const users = get().users;
+    const user = users.find(u => u.username === username);
+    if (!user) {
+      recordFailedAttempt(username);
+      return { success: false, message: 'Invalid username or password' };
+    }
+
+    // Verify hashed password
+    const isValid = await verifyPassword(password, user.password, user.username);
+    if (!isValid) {
+      const record = recordFailedAttempt(username);
+      const remaining = Math.max(0, 5 - record.attempts);
+      if (remaining === 0) {
+        return { success: false, message: 'Too many failed attempts. Account locked for 5 minutes.' };
+      }
+      return { success: false, message: `Invalid username or password. ${remaining} attempt(s) remaining.` };
+    }
+
+    // Success!
+    clearLoginAttempts(username);
+    const userData = { ...user };
+    delete userData.password;
+    // Add session token for extra security
+    userData._sessionToken = Date.now().toString(36) + Math.random().toString(36).substr(2);
+    userData._loginAt = new Date().toISOString();
+    set({ currentUser: userData });
+    saveLocal('currentUser', userData);
+    return { success: true, user: userData };
+  },
+
   logout: () => {
     set({ currentUser: null });
     localStorage.removeItem('currentUser');
   },
-  changePassword: (userId, currentPassword, newPassword) => {
+
+  changePassword: async (userId, currentPassword, newPassword) => {
     const users = get().users;
     const user = users.find(u => u.id === userId);
     if (!user) return { success: false, message: 'User not found' };
-    if (user.password !== currentPassword) return { success: false, message: 'Current password is incorrect' };
-    const updated = users.map(u => u.id === userId ? { ...u, password: newPassword } : u);
+
+    // Verify current password
+    const isValid = await verifyPassword(currentPassword, user.password, user.username);
+    if (!isValid) return { success: false, message: 'Current password is incorrect' };
+
+    // Hash the new password
+    const hashedNew = await hashPassword(newPassword, user.username);
+    const updated = users.map(u => u.id === userId ? { ...u, password: hashedNew } : u);
     saveBoth('users', updated);
     set({ users: updated });
     return { success: true };

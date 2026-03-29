@@ -8,21 +8,29 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const login = useStore(s => s.login);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     if (!username || !password) {
       setError('Please enter both username and password');
       return;
     }
-    const result = login(username, password);
-    if (result.success) {
-      navigate('/');
-    } else {
-      setError(result.message);
+    setLoading(true);
+    try {
+      const result = await login(username, password);
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.message);
+      }
+    } catch {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -74,8 +82,8 @@ export default function Login() {
 
           {error && <p className="form-error" style={{ marginBottom: 12 }}>{error}</p>}
 
-          <button type="submit" className="login-btn">
-            Sign In
+          <button type="submit" className="login-btn" disabled={loading}>
+            {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
 

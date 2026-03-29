@@ -27,7 +27,7 @@ export default function Settings() {
     addToast('Settings saved successfully', 'success');
   };
 
-  const handleChangePassword = (e) => {
+  const handleChangePassword = async (e) => {
     e.preventDefault();
     if (!pwForm.current || !pwForm.newPw || !pwForm.confirm) {
       addToast('Please fill all password fields', 'error');
@@ -41,7 +41,7 @@ export default function Settings() {
       addToast('New passwords do not match', 'error');
       return;
     }
-    const result = changePassword(currentUser.id, pwForm.current, pwForm.newPw);
+    const result = await changePassword(currentUser.id, pwForm.current, pwForm.newPw);
     if (result.success) {
       addToast('Password changed successfully! Use new password on next login.', 'success');
       setPwForm({ current: '', newPw: '', confirm: '' });
