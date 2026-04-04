@@ -188,7 +188,7 @@ export default function Invoices() {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(13);
     const invNum = sale.invoiceNo.replace('INV-', '');
-    doc.text(invNum, rx + 35, y + 11);
+    doc.text(invNum, rx + 26, y + 11);
     doc.line(rx + rightW / 2, y, rx + rightW / 2, y + 18);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
@@ -300,11 +300,15 @@ export default function Invoices() {
     const grandTotal = Math.round(totalBeforeRound);
     const roundOff = grandTotal - totalBeforeRound;
 
-    // CENVAT text on left, totals on right
+    // CENVAT text on left, totals on right — align with table AMOUNT column
     const hasDiscount = totalDiscountAmt > 0;
-    const totBoxH = hasDiscount ? 56 : 48;
-    const totLeftW = cw * 0.55;
+    const showRoundOff = Math.abs(roundOff) >= 0.005;
+    const totLines = 4 + (hasDiscount ? 1 : 0) + (showRoundOff ? 1 : 0);
+    const totBoxH = 8 + totLines * 8;
+    // Use amount column width (34) to align right box with table
+    const amtColW = 34;
     const totRightW = cw * 0.45;
+    const totLeftW = cw - totRightW;
     doc.rect(m, ty, totLeftW, totBoxH);
     doc.rect(m + totLeftW, ty, totRightW, totBoxH);
 
@@ -331,15 +335,20 @@ export default function Invoices() {
     if (hasDiscount) { const discPct = rawSubtotal > 0 ? ((totalDiscountAmt / rawSubtotal) * 100).toFixed(1) : '0'; drawTotLine(`Discount @ ${discPct}%`, `- ${totalDiscountAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, true); }
     drawTotLine(`CGST @ ${halfGst}%`, cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
     drawTotLine(`SGST @  ${halfGst}%`, sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
-    drawTotLine('Round off', roundOff.toFixed(2), false);
+    if (showRoundOff) { const roSign = roundOff >= 0 ? '+' : '-'; drawTotLine('Round off', `${roSign} ${Math.abs(roundOff).toFixed(2)}`, false); }
+    // Grand Total numerical line
+    doc.setDrawColor(0);
+    doc.setLineWidth(0.3);
+    doc.line(m + totLeftW, try1 - 3, pageW - m, try1 - 3);
+    drawTotLine('Grand Total (Rs)', grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
 
     ty += totBoxH;
 
     // ── AMOUNT IN WORDS ROW ──
     doc.rect(m, ty, cw, 10);
     doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-    doc.text(`Amount Chargable (Rs) : ${numberToWords(grandTotal)} Only.`, m + 3, ty + 6);
-    doc.text('E,& O.E', m + cw - 3, ty + 6, { align: 'right' });
+    doc.text(`Amount Chargable (in words) : Rs. ${numberToWords(grandTotal)} Only.`, m + 3, ty + 6);
+    doc.text(`Rs. ${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, m + cw - 3, ty + 6, { align: 'right' });
     ty += 10;
 
     // ── HSN/SAC SUMMARY TABLE ──
@@ -404,11 +413,10 @@ export default function Invoices() {
     doc.text((cgst + sgst).toLocaleString('en-IN', { minimumFractionDigits: 2 }), m + 40, endY + 6);
     endY += 10;
 
-    // ── GSTN + SIGNATURES ──
+    // ── SIGNATURES ──
     doc.rect(m, endY, cw, 22);
     doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-    doc.text(`GSTN NO:  ${companyInfo.gstNumber}`, m + 3, endY + 7);
-    doc.text('Client Sign.', m + 3, endY + 16);
+    doc.text('Client Sign.', m + 3, endY + 12);
     doc.text(`FOR   ${companyInfo.name.replace('M/S. ', '')}`, m + cw * 0.55, endY + 10);
 
     return doc;
@@ -655,7 +663,7 @@ export default function Invoices() {
                         {discAmt > 0 && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)', color: '#dc2626' }}><strong>Discount @ {rawSub > 0 ? ((discAmt / rawSub) * 100).toFixed(1) : 0}%</strong><span>- ₹{discAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>}
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span><strong>CGST @ {halfGst}%</strong></span><span>₹{c.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span><strong>SGST @ {halfGst}%</strong></span><span>₹{sg.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span>Round off</span><span>{(tot - (sub + c + sg)).toFixed(2)}</span></div>
+                        {Math.abs(tot - (sub + c + sg)) >= 0.005 && <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid var(--gray-200)' }}><span>Round off</span><span>{(tot - (sub + c + sg)) >= 0 ? '+' : '-'} {Math.abs(tot - (sub + c + sg)).toFixed(2)}</span></div>}
                         <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', fontWeight: 800, fontSize: 15, color: 'var(--primary-700)' }}><span>Total Rs.</span><span>₹{tot.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</span></div>
                         <div style={{ fontSize: 10, color: 'var(--gray-600)', marginTop: 4 }}>{numberToWords(tot)} Only</div>
                       </div>
@@ -664,7 +672,7 @@ export default function Invoices() {
                 })()}
 
                 <div style={{ marginTop: 20, display: 'flex', justifyContent: 'space-between', fontSize: 11, color: 'var(--gray-500)' }}>
-                  <div>GSTN NO: {companyInfo.gstNumber}<br/>Client Sign.</div>
+                  <div>Client Sign.</div>
                   <div style={{ textAlign: 'right' }}>FOR {companyInfo.name.replace('M/S. ', '')}<br/><br/>Authorised Signatory</div>
                 </div>
               </div>

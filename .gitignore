@@ -36,3 +36,5 @@ migrateToSupabase.js
 # OS files
 Thumbs.db
 Desktop.ini
+
+.vercel

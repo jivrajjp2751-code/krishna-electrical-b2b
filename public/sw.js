@@ -1,4 +1,4 @@
-const CACHE_NAME = 'krishna-electrical-v2';
+const CACHE_NAME = 'krishna-electrical-v3';
 const OFFLINE_URLS = ['/'];
 
 // ── Scheduled reminders stored inside the service worker ──
