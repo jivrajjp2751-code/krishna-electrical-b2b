@@ -277,7 +277,7 @@ export default function Invoices() {
       styles: { fontSize: 7.5, cellPadding: 3, lineWidth: 0.4, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
       columnStyles: {
         0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 54 },
+        1: { cellWidth: 62 },
         2: { cellWidth: 15, halign: 'center' },
         3: { cellWidth: 14, halign: 'center' },
         4: { cellWidth: 15, halign: 'center' },

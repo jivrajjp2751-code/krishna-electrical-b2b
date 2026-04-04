@@ -1420,7 +1420,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
   .modal-header { padding: 14px 16px; }
   .modal-footer { padding: 12px 16px; }
 
-  .data-table:not(.modal .data-table) {
+  .data-table {
     display: flex;
     flex-direction: column;
     gap: 12px;
@@ -1428,15 +1428,15 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     border: none;
     background: transparent;
   }
-  .data-table:not(.modal .data-table) thead {
+  .data-table thead {
     display: none;
   }
-  .data-table:not(.modal .data-table) tbody {
+  .data-table tbody {
     display: flex;
     flex-direction: column;
     gap: 12px;
   }
-  .data-table:not(.modal .data-table) tr {
+  .data-table tr {
     display: flex;
     flex-direction: column;
     padding: 12px;
@@ -1445,7 +1445,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     border-radius: var(--radius-md);
     box-shadow: 0 1px 2px rgba(0,0,0,0.05);
   }
-  .data-table:not(.modal .data-table) td {
+  .data-table td {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1455,7 +1455,7 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     border: none;
     border-bottom: 1px dashed var(--gray-100);
   }
-  .data-table:not(.modal .data-table) td:first-child {
+  .data-table td:first-child {
     font-size: 15px;
     font-weight: 700;
     border-bottom: 1px solid var(--gray-200);
@@ -1464,29 +1464,86 @@ textarea.form-input { resize: vertical; min-height: 70px; }
     color: var(--gray-800);
     justify-content: flex-start;
   }
-  .data-table:not(.modal .data-table) td:last-child {
+  .data-table td:last-child {
     border-bottom: none;
     padding-top: 8px;
     margin-top: 4px;
     justify-content: flex-end;
   }
 
-  /* Modal tables: keep normal table layout but make scrollable */
+  /* ── Modal tables: FORCE back to normal table layout ── */
+  .modal .data-table {
+    display: table !important;
+    gap: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    min-width: 580px !important;
+  }
+  .modal .data-table thead {
+    display: table-header-group !important;
+  }
+  .modal .data-table tbody {
+    display: table-row-group !important;
+    gap: 0 !important;
+  }
+  .modal .data-table tr {
+    display: table-row !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .modal .data-table th {
+    display: table-cell !important;
+    white-space: nowrap;
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+  }
+  .modal .data-table td {
+    display: table-cell !important;
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    text-align: left !important;
+    border: none !important;
+    border-bottom: 1px solid var(--gray-100) !important;
+    justify-content: initial !important;
+    font-weight: normal !important;
+    margin: 0 !important;
+    color: inherit !important;
+  }
+  .modal .data-table td:first-child {
+    font-size: 12px !important;
+    font-weight: normal !important;
+    border-bottom: 1px solid var(--gray-100) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 0 !important;
+  }
+  .modal .data-table td:last-child {
+    padding-top: 8px !important;
+    margin-top: 0 !important;
+  }
   .modal .table-container {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
-  .modal .data-table {
-    min-width: 600px;
+
+  /* Ensure modal scrolls on mobile */
+  .modal-overlay {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    align-items: flex-start;
   }
-  .modal .data-table th,
-  .modal .data-table td {
-    white-space: nowrap;
-    padding: 8px 10px;
-    font-size: 12px;
+  .modal {
+    max-height: calc(100dvh - 20px) !important;
+  }
+  .modal-body {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    flex: 1;
+    min-height: 0;
   }
 
-  /* Mobile sale form: stack inputs vertically instead of table */
   .modal .form-row {
     grid-template-columns: 1fr;
   }
