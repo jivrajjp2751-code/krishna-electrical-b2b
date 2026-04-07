@@ -1,8 +1,9 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { FileText, Download, Mail, Search, ArrowLeft, Printer, MessageCircle, Edit2, Save } from 'lucide-react';
+import { FileText, Download, Mail, Search, ArrowLeft, Printer, MessageCircle, Edit2, Save, Table } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import useStore from '../store/useStore';
 
 export default function Invoices() {
@@ -164,7 +165,7 @@ export default function Invoices() {
     // ── HEADER TABLE (Company Info + Reference boxes) ──
     const headerData = [
       [
-        { content: `${companyInfo.name}\nBlock No-01:02, Bldg No-A-5,\nSect-18, Plot No-24, Nerul(West)\nNavi Mumbai, Maharastra - 400 706\nGSTN NO: ${companyInfo.gstNumber}\nPAN NO: ${companyInfo.pan}\nMail ID: ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
+        { content: `${companyInfo.name}\nBlock No-01:02, Bldg No-A-5,\nSect-18, Plot No-24, Nerul(West)\nNavi Mumbai, Maharastra - 400 706\nGSTN NO: ${companyInfo.gstNumber}\nPAN NO: ${companyInfo.pan}\nMail ID: ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 2, halign: 'left', valign: 'top' } },
         { content: `Invoice No. :\n${displayInvNo}`, styles: { halign: 'left' } },
         { content: `Dated :\n${new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, styles: { halign: 'left' } }
       ],
@@ -177,7 +178,7 @@ export default function Invoices() {
         { content: `Other Reference(s) :\n${refData.otherRef || ''}`, styles: { halign: 'left' } }
       ],
       [
-        { content: `Client :\n${customer?.name || 'Customer'}\n${customer?.address || ''}\nGSTN NO: ${customer?.gstNumber || ''}\nVendor Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
+        { content: `Client :\n${customer?.name || 'Customer'}\n${customer?.address || ''}\n\nGSTN NO: ${customer?.gstNumber || ''}\nVendor Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 2, halign: 'left', valign: 'top' } },
         { content: `Buyers Order No. :\n${refData.buyersOrderNo || ''}`, styles: { halign: 'left' } },
         { content: `Dated :\n${refData.buyersOrderDate || ''}`, styles: { halign: 'left' } }
       ],
@@ -369,7 +370,41 @@ export default function Invoices() {
       margin: { left: m, right: m }
     });
 
+    doc.lastAutoTable.finalY = endY + 20; // reserve space
     return doc;
+  };
+
+  const generateExcel = async (sale) => {
+    try {
+      const response = await fetch('/INVOICE SAMPLE.xlsx');
+      const arrayBuffer = await response.arrayBuffer();
+      const wb = XLSX.read(arrayBuffer, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+
+      const customer = customers.find(c => c.id === sale.customerId);
+      const items = sale.items || [];
+
+      // Mapping data to cells (Adjusted based on typical Excel invoice layouts)
+      XLSX.utils.sheet_add_aoa(ws, [[customer?.name]], { origin: "B12" });
+      XLSX.utils.sheet_add_aoa(ws, [[customer?.address]], { origin: "B13" });
+      XLSX.utils.sheet_add_aoa(ws, [[sale.invoiceNo.replace(/inv-/i, '')]], { origin: "F7" });
+      XLSX.utils.sheet_add_aoa(ws, [[new Date(sale.date).toLocaleDateString()]], { origin: "G7" });
+
+      // Add items starting from row 20
+      const itemRows = items.map((it, i) => [i + 1, it.description, it.hsnCode, it.uom, it.quantity, it.rate, it.amount]);
+      XLSX.utils.sheet_add_aoa(ws, itemRows, { origin: "A20" });
+
+      XLSX.writeFile(wb, `${sale.invoiceNo}.xlsx`);
+      addToast('Excel version generated', 'success');
+    } catch (err) {
+      console.error('Excel Error:', err);
+      addToast('Could not fill Excel sample. Using generic export.', 'info');
+      // Fallback: create fresh sheet
+      const ws = XLSX.utils.json_to_sheet(sale.items);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Invoice");
+      XLSX.writeFile(wb, `${sale.invoiceNo}.xlsx`);
+    }
   };
 
   const generatePDF = (sale, data) => {
@@ -451,8 +486,9 @@ export default function Invoices() {
                                 <button className="btn btn-sm btn-outline" onClick={() => { setSelectedSaleId(s.id); setEditMode(true); }}><FileText size={13} /> View Details</button>
                               )}
                               <button className="btn btn-sm btn-primary" onClick={() => generatePDF(s, null)}><Download size={13} /> PDF</button>
+                              <button className="btn btn-sm btn-secondary" onClick={() => generateExcel(s)} title="Excel"><Table size={13} /></button>
                               <button className="btn btn-sm btn-success" onClick={() => sendWhatsApp(s)} title="WhatsApp"><MessageCircle size={13} /></button>
-                              <button className="btn btn-sm btn-secondary" onClick={() => sendEmail(s)} title="Email"><Mail size={13} /></button>
+                              <button className="btn btn-sm btn-outline" onClick={() => sendEmail(s)} title="Email"><Mail size={13} /></button>
                             </div>
                           </td>
                         </tr>
