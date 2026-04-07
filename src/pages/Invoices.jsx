@@ -320,9 +320,9 @@ export default function Invoices() {
       ]);
     });
 
-    const totalTaxable = subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    const totalC = cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    const totalS = sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    const totalTaxable = sub.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    const totalC = tax.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    const totalS = tax.toLocaleString('en-IN', { minimumFractionDigits: 2 });
 
     hsnRows.push([
       { content: 'Total', styles: { halign: 'right', fontStyle: 'bold' } },
