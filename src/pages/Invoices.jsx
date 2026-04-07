@@ -239,65 +239,63 @@ export default function Invoices() {
 
     let ty = doc.lastAutoTable?.finalY || y + 30;
 
-    // ── CENVAT + TOTALS SECTION ──
-    const rawSubtotal = items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.rate) || 0), 0);
-    const subtotal = items.reduce((s, it) => s + Number(it.amount), 0);
-    const totalDiscountAmt = rawSubtotal - subtotal;
-    const cgst = subtotal * halfGst / 100;
-    const sgst = subtotal * halfGst / 100;
-    const totalBeforeRound = subtotal + cgst + sgst;
-    const grandTotal = Math.round(totalBeforeRound);
-    const roundOff = grandTotal - totalBeforeRound;
+    // ── FOOTER GRID: Declaration (Left) | Totals (Right) ──
+    const sub = items.reduce((s, it) => s + (it.amount || 0), 0);
+    const tax = sub * halfGst / 100;
+    const gtot = Math.round(sub + tax + tax);
+    const rOff = (gtot - (sub + tax + tax));
 
-    // CENVAT text on left, totals on right — align with table AMOUNT column
-    const hasDiscount = totalDiscountAmt > 0;
-    const showRoundOff = Math.abs(roundOff) >= 0.005;
-    const totLines = 4 + (hasDiscount ? 1 : 0) + (showRoundOff ? 1 : 0);
-    const totBoxH = 8 + totLines * 8;
-    // Use amount column width (34) to align right box with table
-    const amtColW = 34;
-    const totRightW = cw * 0.45;
-    const totLeftW = cw - totRightW;
-    doc.rect(m, ty, totLeftW, totBoxH);
-    doc.rect(m + totLeftW, ty, totRightW, totBoxH);
+    const totalsData = [
+      [
+        { content: '"This is to certify that we are not availing any CENVAT Credit on inputs and that our firm is individual / HUF / Proprietary Firm / Partnership Firm / AQP"', rowSpan: 5, styles: { fontSize: 8, valign: 'top', halign: 'left' } },
+        { content: 'Sub Total', styles: { halign: 'left' } },
+        { content: sub.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right' } }
+      ],
+      [
+        { content: `CGST @ ${halfGst}%`, styles: { halign: 'left' } },
+        { content: tax.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }
+      ],
+      [
+        { content: `SGST @ ${halfGst}%`, styles: { halign: 'left' } },
+        { content: tax.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }
+      ],
+      [
+        { content: 'Round off', styles: { halign: 'left' } },
+        { content: (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2), styles: { halign: 'right' } }
+      ],
+      [
+        { content: 'Grand Total (Rs)', styles: { halign: 'left', fontStyle: 'bold', fontSize: 11 } },
+        { content: gtot.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }
+      ]
+    ];
 
-    // CENVAT text
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    const cenvatText = '"This is to certify that we are not availing any CENVAT Credit on inputs and that our firm is individual / HUF / Proprietary Firm / Partnership Firm / AQP"';
-    const cenvatLines = doc.splitTextToSize(cenvatText, totLeftW - 8);
-    let cenY = ty + 8;
-    cenvatLines.forEach(l => { doc.text(l, m + 4, cenY); cenY += 3.5; });
+    autoTable(doc, {
+      startY: ty,
+      body: totalsData,
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0] },
+      columnStyles: {
+        0: { cellWidth: cw * 0.55 },
+        1: { cellWidth: cw * 0.25 },
+        2: { cellWidth: cw * 0.20 },
+      },
+      margin: { left: m, right: m },
+    });
 
-    // Totals on right
-    const trx = m + totLeftW + 3;
-    const trr = pageW - m - 4;
-    let try1 = ty + 8;
-    const drawTotLine = (label, val, bold) => {
-      doc.setFontSize(8);
-      doc.setFont('helvetica', bold ? 'bold' : 'normal');
-      doc.text(label, trx, try1);
-      doc.text(val, trr, try1, { align: 'right' });
-      try1 += 8;
-    };
-    drawTotLine('Sub Total', rawSubtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), false);
-    if (hasDiscount) { const discPct = rawSubtotal > 0 ? ((totalDiscountAmt / rawSubtotal) * 100).toFixed(1) : '0'; drawTotLine(`Discount @ ${discPct}%`, `- ${totalDiscountAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, true); }
-    drawTotLine(`CGST @ ${halfGst}%`, cgst.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
-    drawTotLine(`SGST @  ${halfGst}%`, sgst.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
-    if (showRoundOff) { const roSign = roundOff >= 0 ? '+' : '-'; drawTotLine('Round off', `${roSign} ${Math.abs(roundOff).toFixed(2)}`, false); }
-    // Grand Total numerical line
-    doc.setDrawColor(0);
-    doc.setLineWidth(0.3);
-    doc.line(m + totLeftW, try1 - 3, pageW - m, try1 - 3);
-    drawTotLine('Grand Total (Rs)', grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), true);
+    ty = doc.lastAutoTable.finalY;
 
-    ty += totBoxH;
+    // ── WORDS & GRAND TOTAL BAR ─────
+    autoTable(doc, {
+      startY: ty,
+      body: [
+        [{ content: `Amount Chargeable (in words) : Rs. ${numberToWords(gtot)} Only.`, colSpan: 2, styles: { fontStyle: 'bold' } }, { content: `Rs. ${gtot.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, styles: { halign: 'right', fontStyle: 'bold' } }]
+      ],
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0] },
+      margin: { left: m, right: m }
+    });
 
-    // ── AMOUNT IN WORDS ROW ──
-    doc.rect(m, ty, cw, 10);
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-    doc.text(`Amount Chargable (in words) : Rs. ${numberToWords(grandTotal)} Only.`, m + 3, ty + 6);
-    doc.text(`Rs. ${grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, m + cw - 3, ty + 6, { align: 'right' });
+    ty = doc.lastAutoTable.finalY;
     ty += 10;
 
     // ── HSN/SAC SUMMARY TABLE ──
@@ -355,33 +353,19 @@ export default function Invoices() {
     
     let endY = doc.lastAutoTable?.finalY || ty + 20;
 
-    // ── BANK DETAILS (bottom left) ──
-    const bankY = endY + 2;
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-    doc.text('Bank Details:', m, bankY + 4);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Bank Name: ${companyInfo.bankName || 'State Bank of India'}`, m, bankY + 8);
-    doc.text(`A/c No: ${companyInfo.accountNo || '38765432100'}`, m, bankY + 12);
-    doc.text(`IFSC: ${companyInfo.ifsc || 'SBIN0001234'}`, m, bankY + 16);
-
-    // ── TAX AMOUNT (Rs) ──
-    doc.rect(m, endY, cw, 10);
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-    doc.text('Tax Amount (in words):', m + 50, endY + 4);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Rs. ${numberToWords(cgst + sgst)} Only`, m + 50, endY + 8);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Tax Amount (Rs):', m + 3, endY + 6);
-    doc.text((cgst + sgst).toLocaleString('en-IN', { minimumFractionDigits: 2 }), m + 35, endY + 6);
-    endY += 22;
-
-    // ── SIGNATURES ──
-    doc.rect(m, endY, cw, 25);
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-    doc.text('Client Sign.', m + 3, endY + 20);
-    doc.text(`FOR   ${companyInfo.name}`, m + cw - 10, endY + 6, { align: 'right' });
-    doc.text('Authorised Signatory', m + cw - 10, endY + 22, { align: 'right' });
+    // ── FINAL SIGNATURES ─────
+    autoTable(doc, {
+      startY: endY + 2,
+      body: [
+        [
+          { content: `Bank Details:\nBank Name: ${companyInfo.bankName || 'SBI'}\nA/c No: ${companyInfo.accountNo || ''}\nIFSC: ${companyInfo.ifsc || ''}`, styles: { fontSize: 9, cellPadding: 3 } },
+          { content: `FOR ${companyInfo.name}\n\n\n\nAuthorised Signatory`, styles: { halign: 'right', valign: 'bottom', fontSize: 10, fontStyle: 'bold' } }
+        ]
+      ],
+      theme: 'grid',
+      styles: { lineWidth: 0.3, lineColor: [0, 0, 0] },
+      margin: { left: m, right: m }
+    });
 
     return doc;
   };
