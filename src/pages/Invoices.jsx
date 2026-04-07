@@ -188,23 +188,25 @@ export default function Invoices() {
     // Box 1: Invoice No + Date box
     doc.rect(rx, y, rightW / 2, 20);
     doc.rect(rx + rightW / 2, y, rightW / 2, 20);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Invoice No.', rx + 3, y + 7);
-    doc.text('Dated.', rx + rightW / 2 + 3, y + 7);
-    
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    doc.text(sale.invoiceNo, rx + 3, y + 15);
-    doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 3, y + 15);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Invoice No.', rx + 2, y + 6);
+    doc.text('Dated.', rx + rightW / 2 + 2, y + 6);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    const displayInvNo = (sale.invoiceNo || '').replace(/inv-/i, '');
+    doc.text(displayInvNo, rx + 2, y + 14);
+    doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 2, y + 14);
 
     // Box 2: Delivery Note | Mode/Terms
     doc.rect(rx, y + 20, rightW / 2, 18);
     doc.rect(rx + rightW / 2, y + 20, rightW / 2, 18);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Delivery Note.', rx + 3, y + 26);
-    doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 26);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.deliveryNote || '', rx + 3, y + 34);
-    doc.text(refData.paymentTerms || '', rx + rightW / 2 + 3, y + 34);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Delivery Note.', rx + 2, y + 25);
+    doc.text('Mode/Terms of Payment', rx + rightW / 2 + 2, y + 25);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    const delNoteLines = doc.splitTextToSize(refData.deliveryNote || '', (rightW / 2) - 4);
+    const payTermsLines = doc.splitTextToSize(refData.paymentTerms || '', (rightW / 2) - 4);
+    doc.text(delNoteLines, rx + 2, y + 30);
+    doc.text(payTermsLines, rx + rightW / 2 + 2, y + 30);
 
     // Box 3: Suppliers Ref | Other References
     doc.rect(rx, y + 38, rightW / 2, 20);
@@ -225,8 +227,7 @@ export default function Invoices() {
     const customerName = customer?.name || selectedCustomer?.name || 'Customer';
     doc.setFontSize(14); doc.setFont('helvetica', 'bold');
     doc.text('Client :', m + 3, y + 9);
-    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-    doc.text(`${customerName}`, m + 22, y + 9);
+    doc.text(`${customerName}`, m + 25, y + 9);
     
     const customerAddr = customer?.address || selectedCustomer?.address || '';
     const caddrLines = doc.splitTextToSize(customerAddr, leftW - 10);
@@ -243,22 +244,22 @@ export default function Invoices() {
     // Box 4: Buyers Order No | Dated
     doc.rect(rx, y, rightW / 2, 13);
     doc.rect(rx + rightW / 2, y, rightW / 2, 13);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Buyers Order No.', rx + 3, y + 5);
-    doc.text('Dated', rx + rightW / 2 + 3, y + 5);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.buyersOrderNo || '', rx + 3, y + 10);
-    doc.text(refData.buyersOrderDate || '', rx + rightW / 2 + 3, y + 10);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Buyers Order No.', rx + 2, y + 4);
+    doc.text('Dated', rx + rightW / 2 + 2, y + 4);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text(refData.buyersOrderNo || '', rx + 2, y + 10);
+    doc.text(refData.buyersOrderDate || '', rx + rightW / 2 + 2, y + 10);
 
     // Box 5: Despatch Doc No | Delivery Note Date
     doc.rect(rx, y + 13, rightW / 2, 13);
     doc.rect(rx + rightW / 2, y + 13, rightW / 2, 13);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Despatch Document No.', rx + 3, y + 18);
-    doc.text('Delivery Note Date', rx + rightW / 2 + 3, y + 18);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.despatchDocNo || '', rx + 3, y + 23);
-    doc.text(refData.deliveryNoteDate || '', rx + rightW / 2 + 3, y + 23);
+    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
+    doc.text('Despatch Document No.', rx + 2, y + 17);
+    doc.text('Delivery Note Date', rx + rightW / 2 + 2, y + 17);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
+    doc.text(refData.despatchDocNo || '', rx + 2, y + 23);
+    doc.text(refData.deliveryNoteDate || '', rx + rightW / 2 + 2, y + 23);
 
     // Box 6: Despatched Through | Destination
     doc.rect(rx, y + 26, rightW / 2, 13);
@@ -427,18 +428,33 @@ export default function Invoices() {
     
     let endY = doc.lastAutoTable?.finalY || ty + 20;
 
-    // ── TAX AMOUNT ──
+    // ── BANK DETAILS (bottom left) ──
+    const bankY = endY + 2;
+    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+    doc.text('Bank Details:', m, bankY + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Bank Name: ${companyInfo.bankName || 'State Bank of India'}`, m, bankY + 8);
+    doc.text(`A/c No: ${companyInfo.accountNo || '38765432100'}`, m, bankY + 12);
+    doc.text(`IFSC: ${companyInfo.ifsc || 'SBIN0001234'}`, m, bankY + 16);
+
+    // ── TAX AMOUNT (Rs) ──
     doc.rect(m, endY, cw, 10);
     doc.setFontSize(8); doc.setFont('helvetica', 'bold');
+    doc.text('Tax Amount (in words):', m + 50, endY + 4);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Rs. ${numberToWords(cgst + sgst)} Only`, m + 50, endY + 8);
+    
+    doc.setFont('helvetica', 'bold');
     doc.text('Tax Amount (Rs):', m + 3, endY + 6);
-    doc.text((cgst + sgst).toLocaleString('en-IN', { minimumFractionDigits: 2 }), m + 40, endY + 6);
-    endY += 10;
+    doc.text((cgst + sgst).toLocaleString('en-IN', { minimumFractionDigits: 2 }), m + 35, endY + 6);
+    endY += 22;
 
     // ── SIGNATURES ──
-    doc.rect(m, endY, cw, 22);
-    doc.setFontSize(8); doc.setFont('helvetica', 'bold');
-    doc.text('Client Sign.', m + 3, endY + 12);
-    doc.text(`FOR   ${companyInfo.name.replace('M/S. ', '')}`, m + cw * 0.55, endY + 10);
+    doc.rect(m, endY, cw, 25);
+    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
+    doc.text('Client Sign.', m + 3, endY + 20);
+    doc.text(`FOR   ${companyInfo.name}`, m + cw - 10, endY + 6, { align: 'right' });
+    doc.text('Authorised Signatory', m + cw - 10, endY + 22, { align: 'right' });
 
     return doc;
   };
