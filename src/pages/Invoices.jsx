@@ -221,7 +221,7 @@ export default function Invoices() {
     caddr.forEach(l => { doc.text(l, m + 3, cay); cay += 4.5; });
     
     if (customer?.gstNumber) { doc.setFont('helvetica', 'bold'); doc.text(`GSTN NO: ${customer.gstNumber}`, m + 3, y + r2h - 10); }
-    if (customer?.vendorCode) { doc.text(`Vender Code- ${customer.vendorCode}`, m + 3, y + r2h - 5); }
+    if (customer?.vendorCode) { doc.text(`Vendor Code- ${customer.vendorCode}`, m + 3, y + r2h - 5); }
 
     // Right boxes continue
     // Box 4: Buyers Order No | Dated
