@@ -28,7 +28,7 @@ export default function Sales() {
 
   const nextInvoiceNo = useMemo(() => {
     const lastNum = sales.length + 1;
-    return `INV-${String(lastNum).padStart(3, '0')}`;
+    return String(lastNum);
   }, [sales]);
 
   const filtered = useMemo(() => {

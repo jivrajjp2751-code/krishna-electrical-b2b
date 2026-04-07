@@ -2,8 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FileText, Download, Mail, Search, ArrowLeft, Printer, MessageCircle, Edit2, Save } from 'lucide-react';
 import { jsPDF } from 'jspdf';
-import { applyPlugin } from 'jspdf-autotable';
-applyPlugin(jsPDF);
+import autoTable from 'jspdf-autotable';
 import useStore from '../store/useStore';
 
 export default function Invoices() {
@@ -123,16 +122,16 @@ export default function Invoices() {
   //  PDF GENERATION — matches exact image format
   // ═══════════════════════════════════════════════
   const buildPDF = (sale, data) => {
-    const items = data?.items || (sale.invoiceData?.items) || (sale.items || []).map(item => {
+    const items = data?.items || sale.invoiceData?.items || (sale.items || []).map(item => {
       const product = products.find(p => p.id === item.productId);
       return { 
         description: product?.name || item.description || 'Product', 
         hsnCode: item.hsnCode || product?.hsnCode || '', 
         uom: item.uom || product?.unit || 'nos', 
-        quantity: item.quantity, 
-        rate: item.sellingPrice || item.rate, 
-        discount: item.discount || 0, 
-        amount: item.total || item.amount 
+        quantity: Number(item.quantity) || 0, 
+        rate: Number(item.sellingPrice || item.rate) || 0, 
+        discount: Number(item.discount) || 0, 
+        amount: Number(item.total || item.amount) || 0 
       };
     });
 
@@ -289,7 +288,7 @@ export default function Invoices() {
       Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: y,
       head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']],
       body: itemRows,
@@ -308,7 +307,7 @@ export default function Invoices() {
       margin: { left: m, right: m },
     });
 
-    let ty = doc.lastAutoTable.finalY;
+    let ty = doc.lastAutoTable?.finalY || y + 30;
 
     // ── CENVAT + TOTALS SECTION ──
     const rawSubtotal = items.reduce((s, it) => s + (Number(it.quantity) || 0) * (Number(it.rate) || 0), 0);
@@ -405,7 +404,7 @@ export default function Invoices() {
       { content: totalS, styles: { fontStyle: 'bold' } }
     ]);
 
-    doc.autoTable({
+    autoTable(doc, {
       startY: ty,
       head: [
         [
@@ -424,7 +423,7 @@ export default function Invoices() {
       margin: { left: m, right: m },
     });
     
-    let endY = doc.lastAutoTable.finalY;
+    let endY = doc.lastAutoTable?.finalY || ty + 20;
 
     // ── TAX AMOUNT ──
     doc.rect(m, endY, cw, 10);
