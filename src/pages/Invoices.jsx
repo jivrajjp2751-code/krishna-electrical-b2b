@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FileText, Download, Mail, Search, ArrowLeft, Printer, MessageCircle, Edit2, Save } from 'lucide-react';
-import { jsPDF } from 'jspdf';
+import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import useStore from '../store/useStore';
 
@@ -442,32 +442,41 @@ export default function Invoices() {
   };
 
   const generatePDF = (sale, data) => {
-    const doc = buildPDF(sale, data);
-    doc.save(`Invoice_${sale.invoiceNo}.pdf`);
-    addToast(`Invoice ${sale.invoiceNo} downloaded`, 'success');
+    try {
+      const doc = buildPDF(sale, data);
+      doc.save(`${sale.invoiceNo}.pdf`);
+      addToast(`Invoice ${sale.invoiceNo} downloaded`, 'success');
+    } catch (err) {
+      console.error('PDF Error:', err);
+      addToast(`PDF Error: ${err.message}`, 'error');
+    }
   };
 
   const shareInvoiceWithFile = async (sale, method) => {
-    const doc = buildPDF(sale, null);
-    const filename = `Invoice_${sale.invoiceNo}.pdf`;
-    
-    const customer = customers.find(c => c.id === sale.customerId);
-    const phone = (customer?.phone || '').replace(/[^0-9]/g, '');
+    try {
+      const doc = buildPDF(sale, null);
+      const filename = `${sale.invoiceNo}.pdf`;
+      
+      const customer = customers.find(c => c.id === sale.customerId);
+      const phone = (customer?.phone || '').replace(/[^0-9]/g, '');
 
-    doc.save(filename);
-    addToast('PDF Downloaded! Please attach it to your message manually.', 'info');
-    
-    setTimeout(() => {
-      if (method === 'whatsapp') {
-        const text = encodeURIComponent(`*Tax Invoice: ${sale.invoiceNo}*\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nPDF is attached separately.\n\nFrom: ${companyInfo.name}\nMob: ${companyInfo.phone}`);
-        window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
-      } else {
-        const subject = encodeURIComponent(`Invoice ${sale.invoiceNo} - ${companyInfo.name}`);
-        const body = encodeURIComponent(`Dear Sir/Madam,\n\nPlease find your Invoice PDF attached.\n\nInvoice: ${sale.invoiceNo}\nAmount: Rs.${sale.totalAmount.toLocaleString('en-IN')}\n\nRegards,\n${companyInfo.name}\nMob: ${companyInfo.phone}`);
-        const toEmail = customer?.email || '';
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${toEmail}&su=${subject}&body=${body}`, '_blank');
-      }
-    }, 500);
+      doc.save(filename);
+      addToast('Draft Downloaded. Please share manually.', 'info');
+      
+      setTimeout(() => {
+        if (method === 'whatsapp') {
+          const text = encodeURIComponent(`*Invoice: ${sale.invoiceNo}*\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nPDF downloaded to your device.`);
+          window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
+        } else {
+          const subject = encodeURIComponent(`Invoice ${sale.invoiceNo}`);
+          const body = encodeURIComponent(`Invoice: ${sale.invoiceNo}\nAmount: Rs.${sale.totalAmount.toLocaleString('en-IN')}`);
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${customer?.email || ''}&su=${subject}&body=${body}`, '_blank');
+        }
+      }, 300);
+    } catch (err) {
+      console.error('Share Error:', err);
+      addToast(`Error: ${err.message}`, 'error');
+    }
   };
 
   const sendWhatsApp = (sale) => shareInvoiceWithFile(sale, 'whatsapp');
