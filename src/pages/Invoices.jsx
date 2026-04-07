@@ -158,6 +158,7 @@ export default function Invoices() {
     doc.setFontSize(14);
     doc.text(`Mob: ${companyInfo.phone}`, pageW - m - 4, y + 8, { align: 'right' });
     y += 16;
+    const displayInvNo = (sale.invoiceNo || '').replace(/inv-/i, '');
 
     // ── HEADER TABLE (Company Info + Reference boxes) ──
     const headerData = [
