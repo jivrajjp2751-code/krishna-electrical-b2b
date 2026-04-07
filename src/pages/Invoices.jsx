@@ -157,7 +157,7 @@ export default function Invoices() {
     // ── MOBILE ──
     doc.setFontSize(14);
     doc.text(`Mob: ${companyInfo.phone}`, pageW - m - 4, y + 8, { align: 'right' });
-    y += 14;
+    y += 16;
 
     // ── ROW 1: Company Info (left) | Invoice No + Date (right) ──
     const leftW = cw * 0.55;
@@ -186,35 +186,35 @@ export default function Invoices() {
     // Right column boxes
     const rx = m + leftW;
     // Box 1: Invoice No + Date box
-    doc.rect(rx, y, rightW / 2, 18);
-    doc.rect(rx + rightW / 2, y, rightW / 2, 18);
+    doc.rect(rx, y, rightW / 2, 20);
+    doc.rect(rx + rightW / 2, y, rightW / 2, 20);
     doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Invoice No.', rx + 3, y + 6);
-    doc.text('Dated.', rx + rightW / 2 + 3, y + 6);
+    doc.text('Invoice No.', rx + 3, y + 7);
+    doc.text('Dated.', rx + rightW / 2 + 3, y + 7);
     
     doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
-    doc.text(sale.invoiceNo, rx + 3, y + 13);
-    doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 3, y + 13);
+    doc.text(sale.invoiceNo, rx + 3, y + 15);
+    doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 3, y + 15);
 
     // Box 2: Delivery Note | Mode/Terms
-    doc.rect(rx, y + 18, rightW / 2, 16);
-    doc.rect(rx + rightW / 2, y + 18, rightW / 2, 16);
+    doc.rect(rx, y + 20, rightW / 2, 18);
+    doc.rect(rx + rightW / 2, y + 20, rightW / 2, 18);
     doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Delivery Note.', rx + 3, y + 23);
-    doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 23);
+    doc.text('Delivery Note.', rx + 3, y + 26);
+    doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 26);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.deliveryNote || '', rx + 3, y + 30);
-    doc.text(refData.paymentTerms || '', rx + rightW / 2 + 3, y + 30);
+    doc.text(refData.deliveryNote || '', rx + 3, y + 34);
+    doc.text(refData.paymentTerms || '', rx + rightW / 2 + 3, y + 34);
 
     // Box 3: Suppliers Ref | Other References
-    doc.rect(rx, y + 34, rightW / 2, 18);
-    doc.rect(rx + rightW / 2, y + 34, rightW / 2, 18);
+    doc.rect(rx, y + 38, rightW / 2, 20);
+    doc.rect(rx + rightW / 2, y + 38, rightW / 2, 20);
     doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Suppliers Ref.', rx + 3, y + 39);
-    doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 39);
+    doc.text('Suppliers Ref.', rx + 3, y + 45);
+    doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 45);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.suppliersRef || '', rx + 3, y + 46);
-    doc.text(refData.otherRef || '', rx + rightW / 2 + 3, y + 46);
+    doc.text(refData.suppliersRef || '', rx + 3, y + 53);
+    doc.text(refData.otherRef || '', rx + rightW / 2 + 3, y + 53);
 
     y += r1h;
 
@@ -224,14 +224,15 @@ export default function Invoices() {
 
     const customerName = customer?.name || selectedCustomer?.name || 'Customer';
     doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-    doc.text('Client :', m + 3, y + 8);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text(`${customerName}`, m + 17, y + 8);
+    doc.text('Client :', m + 3, y + 9);
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text(`${customerName}`, m + 22, y + 9);
     
     const customerAddr = customer?.address || selectedCustomer?.address || '';
-    const caddrLines = doc.splitTextToSize(customerAddr, leftW - 6);
-    let cay = y + 14;
-    caddrLines.forEach(l => { doc.text(l, m + 3, cay); cay += 4.5; });
+    const caddrLines = doc.splitTextToSize(customerAddr, leftW - 10);
+    let cay = y + 16;
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+    caddrLines.forEach(l => { doc.text(l, m + 3, cay); cay += 5.5; });
     
     const gstNo = customer?.gstNumber || selectedCustomer?.gstNumber || '';
     const vCode = customer?.vendorCode || selectedCustomer?.vendorCode || '';
