@@ -122,6 +122,7 @@ export default function Invoices() {
   //  PDF GENERATION — matches exact image format
   // ═══════════════════════════════════════════════
   const buildPDF = (sale, data) => {
+    const customer = customers.find(c => c.id === sale.customerId);
     const items = data?.items || sale.invoiceData?.items || (sale.items || []).map(item => {
       const product = products.find(p => p.id === item.productId);
       return { 
