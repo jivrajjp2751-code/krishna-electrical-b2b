@@ -137,17 +137,8 @@ export default function Invoices() {
     const halfGst = getHalfGst();
     let y = 10;
 
-    // ── TITLE BAR ──
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Tax Invoice', pageW / 2, y + 2, { align: 'center' });
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Mob: ${companyInfo.phone}`, pageW - m, y + 2, { align: 'right' });
-    y += 8;
-
     doc.setDrawColor(0);
-    doc.setLineWidth(0.4);
+    doc.setLineWidth(0.3);
 
     // ── ROW 1: Company Info (left) | Invoice No + Date (right) ──
     const leftW = cw * 0.55;
@@ -156,27 +147,20 @@ export default function Invoices() {
     doc.rect(m, y, leftW, r1h);
 
     // Company details
-    let cy = y + 6;
-    doc.setFontSize(11);
+    let cy = y + 7;
+    doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
-    doc.text(companyInfo.name, m + 3, cy); cy += 5;
-    doc.setFontSize(7.5);
+    doc.text(companyInfo.name, m + 3, cy); cy += 6;
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
-    const addr1 = doc.splitTextToSize(companyInfo.address, leftW - 6);
-    addr1.forEach(l => { doc.text(l, m + 3, cy); cy += 3.5; });
-    cy += 1;
+    const addrLines = [
+      'Block No-01:02, Bldg No-A-5,',
+      'Sect-18, Plot No-24, Nerul(West)',
+      'Navi Mumbai, Maharastra - 400 706'
+    ];
+    addrLines.forEach(l => { doc.text(l, m + 3, cy); cy += 4.2; });
     doc.setFont('helvetica', 'bold');
-    doc.text(`GSTIN/UIN:${companyInfo.gstNumber}`, m + 3, cy); cy += 4;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`E-mail- ${companyInfo.email}`, m + 3, cy); cy += 4;
-    if (companyInfo.secondAddress) {
-      const addr2 = doc.splitTextToSize(companyInfo.secondAddress, leftW - 6);
-      addr2.forEach(l => { doc.text(l, m + 3, cy); cy += 3.5; });
-    }
-    cy += 1;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.text(`GSTN NO: ${companyInfo.gstNumber}    PAN NO: ${companyInfo.pan}`, m + 3, cy); cy += 4;
+    doc.text(`GSTN NO: ${companyInfo.gstNumber}  PAN NO: ${companyInfo.pan}`, m + 3, cy); cy += 4.5;
     doc.setFont('helvetica', 'normal');
     doc.text(`Mail ID: ${companyInfo.email}`, m + 3, cy);
 
@@ -271,32 +255,30 @@ export default function Invoices() {
 
     // ── ITEMS TABLE ──
     const itemRows = items.map((item, i) => [
-      `${i + 1}]`,
-      item.description + (item.hsnCode ? `\nHSN- ${item.hsnCode}` : ''),
+      i + 1,
+      item.description,
       item.hsnCode || '',
       item.uom,
       Number(item.quantity).toFixed(2),
       Number(item.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-      item.discount ? `${item.discount}%` : '-',
       Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
     ]);
 
     doc.autoTable({
       startY: y,
-      head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'DISC%', 'AMOUNT']],
+      head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']],
       body: itemRows,
       theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 7.5, fontStyle: 'bold', lineWidth: 0.4, lineColor: [0, 0, 0], halign: 'center', cellPadding: 3 },
-      styles: { fontSize: 7.5, cellPadding: 3, lineWidth: 0.4, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 8.5, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 2.5 },
+      styles: { fontSize: 8.5, cellPadding: 2.5, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
       columnStyles: {
         0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 62 },
-        2: { cellWidth: 15, halign: 'center' },
-        3: { cellWidth: 14, halign: 'center' },
-        4: { cellWidth: 15, halign: 'center' },
-        5: { cellWidth: 24, halign: 'right' },
-        6: { cellWidth: 14, halign: 'center' },
-        7: { cellWidth: 34, halign: 'right', fontStyle: 'bold' },
+        1: { cellWidth: 70 },
+        2: { cellWidth: 18, halign: 'center' },
+        3: { cellWidth: 16, halign: 'center' },
+        4: { cellWidth: 18, halign: 'center' },
+        5: { cellWidth: 26, halign: 'right' },
+        6: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
       },
       margin: { left: m, right: m },
     });
