@@ -140,6 +140,16 @@ export default function Invoices() {
     doc.setDrawColor(0);
     doc.setLineWidth(0.3);
 
+    // ── TITLE ──
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Tax Invoice', pageW / 2, y + 8, { align: 'center' });
+    
+    // ── MOBILE ──
+    doc.setFontSize(14);
+    doc.text(`Mob: ${companyInfo.phone}`, pageW - m - 4, y + 8, { align: 'right' });
+    y += 14;
+
     // ── ROW 1: Company Info (left) | Invoice No + Date (right) ──
     const leftW = cw * 0.55;
     const rightW = cw * 0.45;
@@ -151,16 +161,16 @@ export default function Invoices() {
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.text(companyInfo.name, m + 3, cy); cy += 6;
-    doc.setFontSize(8.5);
+    doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
     const addrLines = [
       'Block No-01:02, Bldg No-A-5,',
       'Sect-18, Plot No-24, Nerul(West)',
       'Navi Mumbai, Maharastra - 400 706'
     ];
-    addrLines.forEach(l => { doc.text(l, m + 3, cy); cy += 4.2; });
+    addrLines.forEach(l => { doc.text(l, m + 3, cy); cy += 4.8; });
     doc.setFont('helvetica', 'bold');
-    doc.text(`GSTN NO: ${companyInfo.gstNumber}  PAN NO: ${companyInfo.pan}`, m + 3, cy); cy += 4.5;
+    doc.text(`GSTN NO: ${companyInfo.gstNumber}   PAN NO: ${companyInfo.pan}`, m + 3, cy); cy += 5;
     doc.setFont('helvetica', 'normal');
     doc.text(`Mail ID: ${companyInfo.email}`, m + 3, cy);
 
@@ -169,31 +179,31 @@ export default function Invoices() {
     // Box 1: Invoice No + Date box
     doc.rect(rx, y, rightW / 2, 18);
     doc.rect(rx + rightW / 2, y, rightW / 2, 18);
-    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
     doc.text('Invoice No.', rx + 3, y + 6);
     doc.text('Dated.', rx + rightW / 2 + 3, y + 6);
     
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(12);
     doc.text(sale.invoiceNo, rx + 3, y + 13);
     doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 3, y + 13);
 
     // Box 2: Delivery Note | Mode/Terms
     doc.rect(rx, y + 18, rightW / 2, 16);
     doc.rect(rx + rightW / 2, y + 18, rightW / 2, 16);
-    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
     doc.text('Delivery Note.', rx + 3, y + 23);
     doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 23);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
     doc.text(data?.deliveryNote || '', rx + 3, y + 30);
     doc.text(data?.paymentTerms || '', rx + rightW / 2 + 3, y + 30);
 
     // Box 3: Suppliers Ref | Other References
     doc.rect(rx, y + 34, rightW / 2, 18);
     doc.rect(rx + rightW / 2, y + 34, rightW / 2, 18);
-    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
     doc.text('Suppliers Ref.', rx + 3, y + 39);
     doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 39);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
     doc.text(data?.suppliersRef || '', rx + 3, y + 46);
     doc.text(data?.otherRef || '', rx + rightW / 2 + 3, y + 46);
 
@@ -203,15 +213,15 @@ export default function Invoices() {
     const r2h = 52;
     doc.rect(m, y, leftW, r2h);
 
-    doc.setFontSize(9); doc.setFont('helvetica', 'bold');
-    doc.text(`Client :  ${customer?.name || ''}`, m + 3, y + 6);
-    doc.setFontSize(7.5); doc.setFont('helvetica', 'normal');
-    const caddr = doc.splitTextToSize(customer?.address || '', leftW - 6);
-    let cay = y + 11;
-    caddr.forEach(l => { doc.text(l, m + 3, cay); cay += 3.5; });
+    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
+    doc.text('Client :', m + 3, y + 8);
+    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
+    doc.text(`${customer?.name || ''}`, m + 17, y + 8);
+    let cay = y + 14;
+    caddr.forEach(l => { doc.text(l, m + 3, cay); cay += 4.5; });
     
-    if (customer?.gstNumber) { doc.setFont('helvetica', 'bold'); doc.text(`GSTN NO: ${customer.gstNumber}`, m + 3, y + r2h - 8); }
-    if (customer?.vendorCode) { doc.text(`Vendor Code- ${customer.vendorCode}`, m + 3, y + r2h - 4); }
+    if (customer?.gstNumber) { doc.setFont('helvetica', 'bold'); doc.text(`GSTN NO: ${customer.gstNumber}`, m + 3, y + r2h - 10); }
+    if (customer?.vendorCode) { doc.text(`Vender Code- ${customer.vendorCode}`, m + 3, y + r2h - 5); }
 
     // Right boxes continue
     // Box 4: Buyers Order No | Dated
@@ -269,16 +279,16 @@ export default function Invoices() {
       head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']],
       body: itemRows,
       theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 8.5, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 2.5 },
-      styles: { fontSize: 8.5, cellPadding: 2.5, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 11, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 3 },
+      styles: { fontSize: 11, cellPadding: 3, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
       columnStyles: {
-        0: { cellWidth: 12, halign: 'center' },
+        0: { cellWidth: 14, halign: 'center' },
         1: { cellWidth: 70 },
-        2: { cellWidth: 18, halign: 'center' },
+        2: { cellWidth: 20, halign: 'center' },
         3: { cellWidth: 16, halign: 'center' },
         4: { cellWidth: 18, halign: 'center' },
-        5: { cellWidth: 26, halign: 'right' },
-        6: { cellWidth: 30, halign: 'right', fontStyle: 'bold' },
+        5: { cellWidth: 24, halign: 'right' },
+        6: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
       },
       margin: { left: m, right: m },
     });
