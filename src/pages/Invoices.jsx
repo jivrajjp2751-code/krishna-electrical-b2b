@@ -151,45 +151,46 @@ export default function Invoices() {
 
     // ── TITLE ──
     doc.setFontSize(24);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Tax Invoice', pageW / 2, y + 8, { align: 'center' });
+    doc.setFont('helvetica', 'bold');
+    doc.text('TAX INVOICE', pageW / 2, y + 8, { align: 'center' });
     
     // ── MOBILE ──
     doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
     doc.text(`Mob: ${companyInfo.phone}`, pageW - m - 4, y + 8, { align: 'right' });
-    y += 16;
+    y += 15;
     const displayInvNo = (sale.invoiceNo || '').replace(/inv-/i, '');
 
     // ── HEADER TABLE (Company Info + Reference boxes) ──
     const headerData = [
       [
-        { content: `${companyInfo.name}\nBlock No-01:02, Bldg No-A-5,\nSect-18, Plot No-24, Nerul(West)\nNavi Mumbai, Maharastra - 400 706\nGSTN NO: ${companyInfo.gstNumber}   PAN NO: ${companyInfo.pan}\nMail ID: ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
-        { content: `Invoice No.\n${displayInvNo}`, styles: { halign: 'left' } },
-        { content: `Dated.\n${new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, styles: { halign: 'left' } }
+        { content: `${companyInfo.name}\nBlock No-01:02, Bldg No-A-5,\nSect-18, Plot No-24, Nerul(West)\nNavi Mumbai, Maharastra - 400 706\nGSTN NO: ${companyInfo.gstNumber}\nPAN NO: ${companyInfo.pan}\nMail ID: ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
+        { content: `Invoice No. :\n${displayInvNo}`, styles: { halign: 'left' } },
+        { content: `Dated :\n${new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, styles: { halign: 'left' } }
       ],
       [
-        { content: `Delivery Note.\n${refData.deliveryNote || ''}`, styles: { halign: 'left' } },
-        { content: `Mode/Terms of Payment\n${refData.paymentTerms || ''}`, styles: { halign: 'left' } }
+        { content: `Delivery Note. :\n${refData.deliveryNote || ''}`, styles: { halign: 'left' } },
+        { content: `Mode/Terms of Payment :\n${refData.paymentTerms || ''}`, styles: { halign: 'left' } }
       ],
       [
-        { content: `Suppliers Ref.\n${refData.suppliersRef || ''}`, styles: { halign: 'left' } },
-        { content: `Other Reference(s)\n${refData.otherRef || ''}`, styles: { halign: 'left' } }
+        { content: `Suppliers Ref. :\n${refData.suppliersRef || ''}`, styles: { halign: 'left' } },
+        { content: `Other Reference(s) :\n${refData.otherRef || ''}`, styles: { halign: 'left' } }
       ],
       [
-        { content: `Client :\n${customer?.name || 'Customer'}\n${(customer?.address || '').slice(0, 100)}\nGSTN NO: ${customer?.gstNumber || ''}\nVendor Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
-        { content: `Buyers Order No.\n${refData.buyersOrderNo || ''}`, styles: { halign: 'left' } },
-        { content: `Dated\n${refData.buyersOrderDate || ''}`, styles: { halign: 'left' } }
+        { content: `Client :\n${customer?.name || 'Customer'}\n${customer?.address || ''}\nGSTN NO: ${customer?.gstNumber || ''}\nVendor Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
+        { content: `Buyers Order No. :\n${refData.buyersOrderNo || ''}`, styles: { halign: 'left' } },
+        { content: `Dated :\n${refData.buyersOrderDate || ''}`, styles: { halign: 'left' } }
       ],
       [
-        { content: `Despatch Document No.\n${refData.despatchDocNo || ''}`, styles: { halign: 'left' } },
-        { content: `Delivery Note Date\n${refData.deliveryNoteDate || ''}`, styles: { halign: 'left' } }
+        { content: `Despatch Document No. :\n${refData.despatchDocNo || ''}`, styles: { halign: 'left' } },
+        { content: `Delivery Note Date :\n${refData.deliveryNoteDate || ''}`, styles: { halign: 'left' } }
       ],
       [
-        { content: `Despatched through\n${refData.despatchedThrough || ''}`, styles: { halign: 'left' } },
-        { content: `Destination\n${refData.destination || ''}`, styles: { halign: 'left' } }
+        { content: `Despatched through :\n${refData.despatchedThrough || ''}`, styles: { halign: 'left' } },
+        { content: `Destination :\n${refData.destination || ''}`, styles: { halign: 'left' } }
       ],
       [
-        { content: `Terms of Delivery\n${refData.termsOfDelivery || ''}`, colSpan: 2, styles: { halign: 'left' } }
+        { content: `Terms of Delivery :\n${refData.termsOfDelivery || ''}`, colSpan: 2, styles: { halign: 'left' } }
       ]
     ];
 
@@ -227,13 +228,13 @@ export default function Invoices() {
       headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 11, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 3 },
       styles: { fontSize: 11, cellPadding: 3, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
       columnStyles: {
-        0: { cellWidth: 14, halign: 'center' },
-        1: { cellWidth: 70 },
-        2: { cellWidth: 20, halign: 'center' },
-        3: { cellWidth: 16, halign: 'center' },
-        4: { cellWidth: 18, halign: 'center' },
-        5: { cellWidth: 24, halign: 'right' },
-        6: { cellWidth: 28, halign: 'right', fontStyle: 'bold' },
+        0: { cellWidth: 12, halign: 'center' },
+        1: { cellWidth: 88 },
+        2: { cellWidth: 18, halign: 'center' },
+        3: { cellWidth: 14, halign: 'center' },
+        4: { cellWidth: 16, halign: 'center' },
+        5: { cellWidth: 20, halign: 'right' },
+        6: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
       },
       margin: { left: m, right: m },
     });
@@ -274,7 +275,7 @@ export default function Invoices() {
       startY: ty,
       body: totalsData,
       theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0] },
+      styles: { fontSize: 9.5, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0] },
       columnStyles: {
         0: { cellWidth: cw * 0.55 },
         1: { cellWidth: cw * 0.25 },
