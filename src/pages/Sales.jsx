@@ -24,6 +24,12 @@ export default function Sales() {
   const [customerId, setCustomerId] = useState('');
   const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
   const [items, setItems] = useState([{ ...emptyItem }]);
+  const [invoiceNo, setInvoiceNo] = useState('');
+
+  const nextInvoiceNo = useMemo(() => {
+    const lastNum = sales.length + 1;
+    return `INV-${String(lastNum).padStart(3, '0')}`;
+  }, [sales]);
 
   const filtered = useMemo(() => {
     return sales.filter(s => {
@@ -107,6 +113,7 @@ export default function Sales() {
       gstAmount,
       totalAmount,
       date: saleDate,
+      invoiceNo: invoiceNo || nextInvoiceNo,
     });
 
     addToast(`Sale recorded! Invoice ${newSale.invoiceNo} generated. Loading preview to finalize...`, 'success');
@@ -251,6 +258,10 @@ export default function Sales() {
                   <div className="form-group">
                     <label className="form-label">Date *</label>
                     <input type="date" className="form-input" value={saleDate} onChange={e => setSaleDate(e.target.value)} required />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Invoice No (Optional)</label>
+                    <input type="text" className="form-input" value={invoiceNo} onChange={e => setInvoiceNo(e.target.value)} placeholder={nextInvoiceNo} />
                   </div>
                 </div>
 

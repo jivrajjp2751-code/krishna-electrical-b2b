@@ -7,7 +7,7 @@ const emptyContact = { name: '', phone: '', email: '', designation: '' };
 
 const emptyCustomer = {
   name: '', contactPerson: '', phone: '', email: '', address: '',
-  gstNumber: '', creditLimit: '', lastOrderDate: '', contacts: []
+  gstNumber: '', vendorCode: '', creditLimit: '', lastOrderDate: '', contacts: []
 };
 
 export default function Customers() {
@@ -54,6 +54,7 @@ export default function Customers() {
       name: customer.name, contactPerson: customer.contactPerson,
       phone: customer.phone, email: customer.email,
       address: customer.address, gstNumber: customer.gstNumber,
+      vendorCode: customer.vendorCode || '',
       creditLimit: customer.creditLimit, lastOrderDate: customer.lastOrderDate || '',
       contacts: customer.contacts || [],
     });
@@ -321,6 +322,10 @@ export default function Customers() {
                   <div className="form-group">
                     <label className="form-label">GST Number</label>
                     <input type="text" className="form-input" value={form.gstNumber} onChange={e => setForm({ ...form, gstNumber: e.target.value })} placeholder="e.g. 27AABCR5678Q1ZS" style={{ textTransform: 'uppercase' }} />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">Vendor Code</label>
+                    <input type="text" className="form-input" value={form.vendorCode} onChange={e => setForm({ ...form, vendorCode: e.target.value })} placeholder="e.g. V-1234" />
                   </div>
                   <div className="form-group">
                     <label className="form-label">Credit Limit (₹)</label>

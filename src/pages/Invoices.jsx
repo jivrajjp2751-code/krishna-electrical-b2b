@@ -72,8 +72,9 @@ export default function Invoices() {
           buyersOrderDate: '',
           despatchDocNo: '',
           deliveryNoteDate: '',
-          despatched: '',
+          despatchedThrough: '',
           destination: '',
+          termsOfDelivery: '',
         });
       }
     }
@@ -91,6 +92,7 @@ export default function Invoices() {
       gstAmount: newGstAmount,
       totalAmount: newTotalAmount,
       invoiceData: editData,
+      invoiceNo: editData.invoiceNo || selectedSale.invoiceNo,
       isLocked: true,
     });
 
@@ -180,49 +182,41 @@ export default function Invoices() {
 
     // Right column boxes
     const rx = m + leftW;
-    // Invoice No + Date box
-    doc.rect(rx, y, rightW, 18);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Invoice No.', rx + 4, y + 10);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(13);
-    const invNum = sale.invoiceNo.replace('INV-', '');
-    doc.text(invNum, rx + 26, y + 11);
-    doc.line(rx + rightW / 2, y, rx + rightW / 2, y + 18);
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Dated.', rx + rightW / 2 + 4, y + 7);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-    doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 4, y + 14);
+    // Box 1: Invoice No + Date box
+    doc.rect(rx, y, rightW / 2, 18);
+    doc.rect(rx + rightW / 2, y, rightW / 2, 18);
+    doc.setFontSize(8); doc.setFont('helvetica', 'normal');
+    doc.text('Invoice No.', rx + 3, y + 6);
+    doc.text('Dated.', rx + rightW / 2 + 3, y + 6);
+    
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
+    doc.text(sale.invoiceNo, rx + 3, y + 13);
+    doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 3, y + 13);
 
-    // Delivery Note | Mode/Terms
-    if (data?.deliveryNote || data?.paymentTerms) {
-      doc.rect(rx, y + 18, rightW / 2, 16);
-      doc.rect(rx + rightW / 2, y + 18, rightW / 2, 16);
-      doc.setFontSize(7.5); doc.setFont('helvetica', 'bold');
-      if (data?.deliveryNote) { doc.text('Delivery Note.', rx + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(data.deliveryNote, rx + 3, y + 30); }
-      if (data?.paymentTerms) { doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5); doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.text(data.paymentTerms, rx + rightW / 2 + 3, y + 30); }
-    } else {
-      doc.rect(rx, y + 18, rightW, 16);
-    }
+    // Box 2: Delivery Note | Mode/Terms
+    doc.rect(rx, y + 18, rightW / 2, 16);
+    doc.rect(rx + rightW / 2, y + 18, rightW / 2, 16);
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('Delivery Note.', rx + 3, y + 23);
+    doc.text('Mode/Terms of Payment', rx + rightW / 2 + 3, y + 23);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.text(data?.deliveryNote || '', rx + 3, y + 30);
+    doc.text(data?.paymentTerms || '', rx + rightW / 2 + 3, y + 30);
 
-    // Suppliers Ref | Other References
-    if (data?.suppliersRef || data?.otherRef) {
-      doc.rect(rx, y + 34, rightW / 2, 18);
-      doc.rect(rx + rightW / 2, y + 34, rightW / 2, 18);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      if (data?.suppliersRef) { doc.text('Suppliers Ref.', rx + 3, y + 40); doc.setFont('helvetica', 'normal'); doc.text(data.suppliersRef, rx + 3, y + 46); }
-      if (data?.otherRef) { doc.setFont('helvetica', 'bold'); doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 40); doc.setFont('helvetica', 'normal'); doc.text(data.otherRef, rx + rightW / 2 + 3, y + 46); }
-    } else {
-      doc.rect(rx, y + 34, rightW, 18);
-    }
+    // Box 3: Suppliers Ref | Other References
+    doc.rect(rx, y + 34, rightW / 2, 18);
+    doc.rect(rx + rightW / 2, y + 34, rightW / 2, 18);
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('Suppliers Ref.', rx + 3, y + 39);
+    doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 39);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.text(data?.suppliersRef || '', rx + 3, y + 46);
+    doc.text(data?.otherRef || '', rx + rightW / 2 + 3, y + 46);
 
     y += r1h;
 
     // ── ROW 2: Client Details (left) | Order details (right) ──
-    const r2h = 32;
+    const r2h = 52;
     doc.rect(m, y, leftW, r2h);
 
     doc.setFontSize(9); doc.setFont('helvetica', 'bold');
@@ -231,28 +225,47 @@ export default function Invoices() {
     const caddr = doc.splitTextToSize(customer?.address || '', leftW - 6);
     let cay = y + 11;
     caddr.forEach(l => { doc.text(l, m + 3, cay); cay += 3.5; });
+    
+    if (customer?.gstNumber) { doc.setFont('helvetica', 'bold'); doc.text(`GSTN NO: ${customer.gstNumber}`, m + 3, y + r2h - 8); }
+    if (customer?.vendorCode) { doc.text(`Vendor Code- ${customer.vendorCode}`, m + 3, y + r2h - 4); }
 
-    // Right: Buyers Order No | Dated
-    if (data?.buyersOrderNo || data?.buyersOrderDate) {
-      doc.rect(rx, y, rightW / 2, 16);
-      doc.rect(rx + rightW / 2, y, rightW / 2, 16);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      if (data?.buyersOrderNo) { doc.text('Buyers Order No.', rx + 3, y + 7); doc.text(data.buyersOrderNo, rx + 3, y + 12); }
-      if (data?.buyersOrderDate) { doc.text('Dated', rx + rightW / 2 + 3, y + 7); doc.text(data.buyersOrderDate, rx + rightW / 2 + 3, y + 12); }
-    } else {
-      doc.rect(rx, y, rightW, 16);
-    }
+    // Right boxes continue
+    // Box 4: Buyers Order No | Dated
+    doc.rect(rx, y, rightW / 2, 13);
+    doc.rect(rx + rightW / 2, y, rightW / 2, 13);
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('Buyers Order No.', rx + 3, y + 5);
+    doc.text('Dated', rx + rightW / 2 + 3, y + 5);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.text(data?.buyersOrderNo || '', rx + 3, y + 10);
+    doc.text(data?.buyersOrderDate || '', rx + rightW / 2 + 3, y + 10);
 
-    // Despatch | Delivery Note Date
-    if (data?.despatchDocNo || data?.deliveryNoteDate) {
-      doc.rect(rx, y + 16, rightW / 2, 16);
-      doc.rect(rx + rightW / 2, y + 16, rightW / 2, 16);
-      doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
-      if (data?.despatchDocNo) { doc.text('Despatch Doc No.', rx + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.text(data.despatchDocNo, rx + 3, y + 30); }
-      if (data?.deliveryNoteDate) { doc.setFont('helvetica', 'bold'); doc.text('Delivery Note Date', rx + rightW / 2 + 3, y + 25); doc.setFont('helvetica', 'normal'); doc.text(data.deliveryNoteDate, rx + rightW / 2 + 3, y + 30); }
-    } else {
-      doc.rect(rx, y + 16, rightW, 16);
-    }
+    // Box 5: Despatch Doc No | Delivery Note Date
+    doc.rect(rx, y + 13, rightW / 2, 13);
+    doc.rect(rx + rightW / 2, y + 13, rightW / 2, 13);
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('Despatch Document No.', rx + 3, y + 18);
+    doc.text('Delivery Note Date', rx + rightW / 2 + 3, y + 18);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.text(data?.despatchDocNo || '', rx + 3, y + 23);
+    doc.text(data?.deliveryNoteDate || '', rx + rightW / 2 + 3, y + 23);
+
+    // Box 6: Despatched Through | Destination
+    doc.rect(rx, y + 26, rightW / 2, 13);
+    doc.rect(rx + rightW / 2, y + 26, rightW / 2, 13);
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('Despatched through', rx + 3, y + 31);
+    doc.text('Destination', rx + rightW / 2 + 3, y + 31);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.text(data?.despatchedThrough || '', rx + 3, y + 36);
+    doc.text(data?.destination || '', rx + rightW / 2 + 3, y + 36);
+
+    // Box 7: Terms of Delivery
+    doc.rect(rx, y + 39, rightW, 13);
+    doc.setFontSize(7); doc.setFont('helvetica', 'normal');
+    doc.text('Terms of Delivery', rx + 3, y + 44);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(7.5);
+    doc.text(data?.termsOfDelivery || '', rx + 3, y + 49);
 
     y += r2h;
 
@@ -589,12 +602,32 @@ export default function Invoices() {
                   </div>
                   <div className="form-row">
                     <div className="form-group">
-                      <label className="form-label" style={{ fontSize: 11 }}>Other Reference(s)</label>
-                      <input className="form-input" style={{ fontSize: 11 }} value={editData.otherRef} onChange={e => setEditData({ ...editData, otherRef: e.target.value })} placeholder="e.g. Q. 110 /25-26  Dt.15-12-2026" disabled={selectedSale.isLocked} />
+                      <label className="form-label" style={{ fontSize: 11 }}>Despatched through</label>
+                      <input className="form-input" style={{ fontSize: 11 }} value={editData.despatchedThrough} onChange={e => setEditData({ ...editData, despatchedThrough: e.target.value })} placeholder="e.g. Couriers" disabled={selectedSale.isLocked} />
                     </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: 11 }}>Destination</label>
+                      <input className="form-input" style={{ fontSize: 11 }} value={editData.destination} onChange={e => setEditData({ ...editData, destination: e.target.value })} disabled={selectedSale.isLocked} />
+                    </div>
+                  </div>
+                  <div className="form-row">
+                    <div className="form-group" style={{ flex: 2 }}>
+                      <label className="form-label" style={{ fontSize: 11 }}>Terms of Delivery</label>
+                      <input className="form-input" style={{ fontSize: 11 }} value={editData.termsOfDelivery} onChange={e => setEditData({ ...editData, termsOfDelivery: e.target.value })} disabled={selectedSale.isLocked} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: 11 }}>Other Reference(s)</label>
+                      <input className="form-input" style={{ fontSize: 11 }} value={editData.otherRef} onChange={e => setEditData({ ...editData, otherRef: e.target.value })} disabled={selectedSale.isLocked} />
+                    </div>
+                  </div>
+                  <div className="form-row">
                     <div className="form-group">
                       <label className="form-label" style={{ fontSize: 11 }}>Suppliers Ref.</label>
                       <input className="form-input" style={{ fontSize: 11 }} value={editData.suppliersRef} onChange={e => setEditData({ ...editData, suppliersRef: e.target.value })} disabled={selectedSale.isLocked} />
+                    </div>
+                    <div className="form-group">
+                      <label className="form-label" style={{ fontSize: 11, color: 'var(--primary-700)', fontWeight: 700 }}>Invoice No. (Editable)</label>
+                      <input className="form-input" style={{ fontSize: 11, border: '1px solid var(--primary-300)' }} value={editData.invoiceNo || selectedSale.invoiceNo} onChange={e => setEditData({ ...editData, invoiceNo: e.target.value })} disabled={selectedSale.isLocked} />
                     </div>
                   </div>
                 </div>

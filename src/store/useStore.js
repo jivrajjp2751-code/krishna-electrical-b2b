@@ -305,7 +305,8 @@ const useStore = create((set, get) => ({
   addSale: (sale) => {
     const state = get();
     const invoiceCount = state.sales.length + 1;
-    const invoiceNo = `INV-${String(invoiceCount).padStart(3, '0')}`;
+    const generatedNo = `INV-${String(invoiceCount).padStart(3, '0')}`;
+    const invoiceNo = sale.invoiceNo || generatedNo;
     const newSale = { ...sale, id: generateId(), invoiceNo, status: 'completed' };
 
     set(storeState => {
