@@ -159,126 +159,53 @@ export default function Invoices() {
     doc.text(`Mob: ${companyInfo.phone}`, pageW - m - 4, y + 8, { align: 'right' });
     y += 16;
 
-    // ── ROW 1: Company Info (left) | Invoice No + Date (right) ──
-    const leftW = cw * 0.55;
-    const rightW = cw * 0.45;
-    const r1h = 52;
-    doc.rect(m, y, leftW, r1h);
-
-    // Company details
-    let cy = y + 7;
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(companyInfo.name, m + 3, cy); cy += 6;
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'normal');
-    const addrLines = [
-      'Block No-01:02, Bldg No-A-5,',
-      'Sect-18, Plot No-24, Nerul(West)',
-      'Navi Mumbai, Maharastra - 400 706'
+    // ── HEADER TABLE (Company Info + Reference boxes) ──
+    const headerData = [
+      [
+        { content: `${companyInfo.name}\nBlock No-01:02, Bldg No-A-5,\nSect-18, Plot No-24, Nerul(West)\nNavi Mumbai, Maharastra - 400 706\nGSTN NO: ${companyInfo.gstNumber}   PAN NO: ${companyInfo.pan}\nMail ID: ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
+        { content: `Invoice No.\n${displayInvNo}`, styles: { halign: 'left' } },
+        { content: `Dated.\n${new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, styles: { halign: 'left' } }
+      ],
+      [
+        { content: `Delivery Note.\n${refData.deliveryNote || ''}`, styles: { halign: 'left' } },
+        { content: `Mode/Terms of Payment\n${refData.paymentTerms || ''}`, styles: { halign: 'left' } }
+      ],
+      [
+        { content: `Suppliers Ref.\n${refData.suppliersRef || ''}`, styles: { halign: 'left' } },
+        { content: `Other Reference(s)\n${refData.otherRef || ''}`, styles: { halign: 'left' } }
+      ],
+      [
+        { content: `Client :\n${customer?.name || 'Customer'}\n${(customer?.address || '').slice(0, 100)}\nGSTN NO: ${customer?.gstNumber || ''}\nVendor Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 3, halign: 'left', valign: 'top' } },
+        { content: `Buyers Order No.\n${refData.buyersOrderNo || ''}`, styles: { halign: 'left' } },
+        { content: `Dated\n${refData.buyersOrderDate || ''}`, styles: { halign: 'left' } }
+      ],
+      [
+        { content: `Despatch Document No.\n${refData.despatchDocNo || ''}`, styles: { halign: 'left' } },
+        { content: `Delivery Note Date\n${refData.deliveryNoteDate || ''}`, styles: { halign: 'left' } }
+      ],
+      [
+        { content: `Despatched through\n${refData.despatchedThrough || ''}`, styles: { halign: 'left' } },
+        { content: `Destination\n${refData.destination || ''}`, styles: { halign: 'left' } }
+      ],
+      [
+        { content: `Terms of Delivery\n${refData.termsOfDelivery || ''}`, colSpan: 2, styles: { halign: 'left' } }
+      ]
     ];
-    addrLines.forEach(l => { doc.text(l, m + 3, cy); cy += 4.8; });
-    doc.setFont('helvetica', 'bold');
-    doc.text(`GSTN NO: ${companyInfo.gstNumber}   PAN NO: ${companyInfo.pan}`, m + 3, cy); cy += 5;
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Mail ID: ${companyInfo.email}`, m + 3, cy);
 
-    // Right column boxes
-    const rx = m + leftW;
-    // Box 1: Invoice No + Date box
-    doc.rect(rx, y, rightW / 2, 20);
-    doc.rect(rx + rightW / 2, y, rightW / 2, 20);
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text('Invoice No.', rx + 2, y + 6);
-    doc.text('Dated.', rx + rightW / 2 + 2, y + 6);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    const displayInvNo = (sale.invoiceNo || '').replace(/inv-/i, '');
-    doc.text(displayInvNo, rx + 2, y + 14);
-    doc.text(new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' }), rx + rightW / 2 + 2, y + 14);
+    autoTable(doc, {
+      startY: y,
+      body: headerData,
+      theme: 'grid',
+      styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], overflow: 'linebreak' },
+      columnStyles: {
+        0: { cellWidth: cw * 0.55 },
+        1: { cellWidth: cw * 0.225 },
+        2: { cellWidth: cw * 0.225 },
+      },
+      margin: { left: m, right: m },
+    });
 
-    // Box 2: Delivery Note | Mode/Terms
-    doc.rect(rx, y + 20, rightW / 2, 18);
-    doc.rect(rx + rightW / 2, y + 20, rightW / 2, 18);
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text('Delivery Note.', rx + 2, y + 25);
-    doc.text('Mode/Terms of Payment', rx + rightW / 2 + 2, y + 25);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    const delNoteLines = doc.splitTextToSize(refData.deliveryNote || '', (rightW / 2) - 4);
-    const payTermsLines = doc.splitTextToSize(refData.paymentTerms || '', (rightW / 2) - 4);
-    doc.text(delNoteLines, rx + 2, y + 30);
-    doc.text(payTermsLines, rx + rightW / 2 + 2, y + 30);
-
-    // Box 3: Suppliers Ref | Other References
-    doc.rect(rx, y + 38, rightW / 2, 20);
-    doc.rect(rx + rightW / 2, y + 38, rightW / 2, 20);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Suppliers Ref.', rx + 3, y + 45);
-    doc.text('Other Reference(s)', rx + rightW / 2 + 3, y + 45);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.suppliersRef || '', rx + 3, y + 53);
-    doc.text(refData.otherRef || '', rx + rightW / 2 + 3, y + 53);
-
-    y += r1h;
-
-    // ── ROW 2: Client Details (left) | Order details (right) ──
-    const r2h = 52;
-    doc.rect(m, y, leftW, r2h);
-
-    const customerName = customer?.name || selectedCustomer?.name || 'Customer';
-    doc.setFontSize(14); doc.setFont('helvetica', 'bold');
-    doc.text('Client :', m + 3, y + 9);
-    doc.text(`${customerName}`, m + 25, y + 9);
-    
-    const customerAddr = customer?.address || selectedCustomer?.address || '';
-    const caddrLines = doc.splitTextToSize(customerAddr, leftW - 10);
-    let cay = y + 16;
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    caddrLines.forEach(l => { doc.text(l, m + 3, cay); cay += 5.5; });
-    
-    const gstNo = customer?.gstNumber || selectedCustomer?.gstNumber || '';
-    const vCode = customer?.vendorCode || selectedCustomer?.vendorCode || '';
-    if (gstNo) { doc.setFont('helvetica', 'bold'); doc.text(`GSTN NO: ${gstNo}`, m + 3, y + r2h - 10); }
-    if (vCode) { doc.setFont('helvetica', 'bold'); doc.text(`Vendor Code- ${vCode}`, m + 3, y + r2h - 5); }
-
-    // Right boxes continue
-    // Box 4: Buyers Order No | Dated
-    doc.rect(rx, y, rightW / 2, 13);
-    doc.rect(rx + rightW / 2, y, rightW / 2, 13);
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text('Buyers Order No.', rx + 2, y + 4);
-    doc.text('Dated', rx + rightW / 2 + 2, y + 4);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    doc.text(refData.buyersOrderNo || '', rx + 2, y + 10);
-    doc.text(refData.buyersOrderDate || '', rx + rightW / 2 + 2, y + 10);
-
-    // Box 5: Despatch Doc No | Delivery Note Date
-    doc.rect(rx, y + 13, rightW / 2, 13);
-    doc.rect(rx + rightW / 2, y + 13, rightW / 2, 13);
-    doc.setFontSize(10); doc.setFont('helvetica', 'normal');
-    doc.text('Despatch Document No.', rx + 2, y + 17);
-    doc.text('Delivery Note Date', rx + rightW / 2 + 2, y + 17);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
-    doc.text(refData.despatchDocNo || '', rx + 2, y + 23);
-    doc.text(refData.deliveryNoteDate || '', rx + rightW / 2 + 2, y + 23);
-
-    // Box 6: Despatched Through | Destination
-    doc.rect(rx, y + 26, rightW / 2, 13);
-    doc.rect(rx + rightW / 2, y + 26, rightW / 2, 13);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Despatched through', rx + 3, y + 31);
-    doc.text('Destination', rx + rightW / 2 + 3, y + 31);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.despatchedThrough || '', rx + 3, y + 36);
-    doc.text(refData.destination || '', rx + rightW / 2 + 3, y + 36);
-
-    // Box 7: Terms of Delivery
-    doc.rect(rx, y + 39, rightW, 13);
-    doc.setFontSize(11); doc.setFont('helvetica', 'normal');
-    doc.text('Terms of Delivery', rx + 3, y + 44);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(11);
-    doc.text(refData.termsOfDelivery || '', rx + 3, y + 49);
-
-    y += r2h;
+    y = doc.lastAutoTable.finalY + 1;
 
     // ── ITEMS TABLE ──
     const itemRows = items.map((item, i) => [
