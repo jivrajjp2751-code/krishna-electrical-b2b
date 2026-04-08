@@ -124,7 +124,7 @@ export default function Invoices() {
   const numberToWords = (num) => {
     if (num === 0) return 'Zero';
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Fourty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
     const convert = (n) => {
       if (n === 0) return '';
       if (n < 20) return ones[n];
@@ -134,7 +134,8 @@ export default function Invoices() {
       if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 ? ' ' + convert(n % 100000) : '');
       return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 ? ' ' + convert(n % 10000000) : '');
     };
-    return convert(Math.round(num));
+    const words = convert(Math.round(num));
+    return words ? words + ' Only' : '';
   };
 
   // ═══════════════════════════════════════════════
@@ -168,108 +169,112 @@ export default function Invoices() {
 
       // 1. TOP BAR (TAX INVOICE)
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(18);
-      doc.text('TAX INVOICE', pw/2, y + 5, { align: 'center' });
-      doc.setFontSize(9);
+      doc.setFontSize(22);
+      doc.text('Tax Invoice', pw/2, y + 8, { align: 'center' });
+      doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Mob: ${companyInfo.phone}`, pw - m, y + 4, { align: 'right' });
+      doc.text(`Mob: ${companyInfo.phone}`, pw - m, y + 6, { align: 'right' });
 
-      y += 10;
+      y += 15;
 
       // 2. MAIN BORDER BOX
       const boxStartY = y;
       doc.setDrawColor(0);
-      doc.setLineWidth(0.3);
+      doc.setLineWidth(0.4);
 
       // --- SECTION 1: SUPPLIER ---
-      doc.rect(m, y, cw, 35); // Supplier box
-      doc.rect(m + (cw*0.55), y, cw*0.45, 35); // Ref side grid
+      doc.rect(m, y, cw, 45); // Supplier box
+      doc.rect(m + (cw*0.55), y, cw*0.45, 45); // Ref side grid
       
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      doc.text(companyInfo.name, m + 2, y + 5);
+      doc.setFontSize(12);
+      doc.text(companyInfo.name, m + 3, y + 6);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8.5);
-      // Split address into lines if needed
+      doc.setFontSize(9.5);
       const addrLines = doc.splitTextToSize(companyInfo.address, (cw * 0.5) - 4);
-      doc.text(addrLines, m + 2, y + 10);
-      doc.text(`GSTN/UIN: ${companyInfo.gstNumber}`, m + 2, y + 25);
-      doc.text(`State Name: Maharashtra, Code: 27`, m + 2, y + 29);
-      doc.text(`E-Mail: ${companyInfo.email}`, m + 2, y + 33);
+      doc.text(addrLines, m + 3, y + 12);
+      doc.text(`GSTN NO: ${companyInfo.gstNumber}   PAN NO: ${companyInfo.pan || ''}`, m + 3, y + 33);
+      doc.text(`Mail ID: ${companyInfo.email}`, m + 3, y + 38);
 
       // Ref fields grid (Right of Supplier)
-      doc.setLineWidth(0.2);
+      doc.setLineWidth(0.3);
       const gridX = m + (cw * 0.55);
       const colW = (cw * 0.45) / 2;
       
-      // Lines for the 3x2 grid
-      doc.line(gridX, y + 12, pw - m, y + 12);
-      doc.line(gridX, y + 24, pw - m, y + 24);
-      doc.line(gridX + colW, y, gridX + colW, y + 35);
-
-      doc.setFontSize(7.5);
-      doc.text('Invoice No.', gridX + 1, y + 4);
-      doc.setFont('helvetica', 'bold');
-      doc.text(sale.invoiceNo.replace('inv-',''), gridX + 1, y + 9);
-      
-      doc.setFont('helvetica', 'normal');
-      doc.text('Dated.', gridX + colW + 1, y + 4);
-      doc.setFont('helvetica', 'bold');
-      doc.text(new Date(sale.date).toLocaleDateString('en-IN'), gridX + colW + 1, y + 9);
-
-      doc.setFont('helvetica', 'normal');
-      doc.text('Delivery Note', gridX + 1, y + 16);
-      doc.text(refData.deliveryNote || '', gridX + 1, y + 21);
-
-      doc.text('Mode/Terms of Payment', gridX + colW + 1, y + 16);
-      doc.text(refData.paymentTerms || '', gridX + colW + 1, y + 21);
-
-      doc.text('Supplier\'s Ref.', gridX + 1, y + 28);
-      doc.text(refData.suppliersRef || '', gridX + 1, y + 33);
-
-      doc.text('Other Reference(s)', gridX + colW + 1, y + 28);
-      doc.text(refData.otherRef || '', gridX + colW + 1, y + 33);
-
-      y += 35;
-
-      // --- SECTION 2: CLIENT ---
-      doc.rect(m, y, cw, 40); // Client box
-      doc.rect(m + (cw*0.55), y, cw*0.45, 40); // Client Ref side grid
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Client : ${customer?.name || 'Customer'}`, m + 2, y + 5);
-      doc.setFont('helvetica', 'normal');
-      const custAddr = doc.splitTextToSize(customer?.address || '', (cw * 0.5) - 4);
-      doc.text(custAddr, m + 2, y + 10);
-      doc.text(`GSTN/UIN: ${customer?.gstNumber || ''}`, m + 2, y + 32);
-      doc.text(`Mail- ${customer?.email || ''}`, m + 2, y + 36);
-      doc.text(`Vender Code- ${customer?.vendorCode || ''}`, m + 2, y + 39);
-
-      // Client ref grid
-      doc.line(gridX, y + 10, pw - m, y + 10);
-      doc.line(gridX, y + 20, pw - m, y + 20);
+      doc.line(gridX, y + 15, pw - m, y + 15);
       doc.line(gridX, y + 30, pw - m, y + 30);
       doc.line(gridX + colW, y, gridX + colW, y + 30);
 
-      doc.text('Buyer\'s Order No.', gridX + 1, y + 4);
-      doc.text(refData.buyersOrderNo || '', gridX + 1, y + 9);
-      doc.text('Dated', gridX + colW + 1, y + 4);
-      doc.text(refData.buyersOrderDate || '', gridX + colW + 1, y + 9);
+      doc.setFontSize(9);
+      doc.text('Invoice No.', gridX + 2, y + 6);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(sale.invoiceNo.replace('inv-',''), gridX + 22, y + 6);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('Dated.', gridX + colW + 2, y + 6);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.text(new Date(sale.date).toLocaleDateString('en-IN'), gridX + colW + 15, y + 6);
 
-      doc.text('Despatch Document No.', gridX + 1, y + 14);
-      doc.text(refData.despatchDocNo || '', gridX + 1, y + 19);
-      doc.text('Delivery Note Date', gridX + colW + 1, y + 14);
-      doc.text(refData.deliveryNoteDate || '', gridX + colW + 1, y + 19);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('Delivery Note.', gridX + 2, y + 21);
+      doc.text(refData.deliveryNote || '', gridX + 2, y + 26);
 
-      doc.text('Despatched through', gridX + 1, y + 24);
-      doc.text(refData.despatchedThrough || '', gridX + 1, y + 29);
-      doc.text('Destination', gridX + colW + 1, y + 24);
-      doc.text(refData.destination || '', gridX + colW + 1, y + 29);
+      doc.text('Mode/Terms of Payment', gridX + colW + 2, y + 21);
+      doc.text(refData.paymentTerms || '', gridX + colW + 2, y + 26);
 
-      doc.text('Terms of Delivery', gridX + 1, y + 34);
-      doc.text(refData.termsOfDelivery || '', gridX + 1, y + 39);
+      doc.text('Supplier\'s Ref.', gridX + 2, y + 36);
+      doc.text(refData.suppliersRef || '', gridX + 2, y + 41);
 
-      y += 40;
+      doc.text('Other Reference(s)', gridX + colW + 2, y + 36);
+      doc.text(refData.otherRef || '', gridX + colW + 2, y + 41);
+
+      y += 45;
+
+      // --- SECTION 2: CLIENT ---
+      doc.rect(m, y, cw, 45); // Client box
+      doc.rect(m + (cw*0.55), y, cw*0.45, 45); // Client Ref side grid
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
+      doc.text(`Client : ${customer?.name || 'Customer'}`, m + 3, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      const custAddr = doc.splitTextToSize(customer?.address || '', (cw * 0.5) - 4);
+      doc.text(custAddr, m + 3, y + 12);
+      doc.text(`GST No. ${customer?.gstNumber || ''}`, m + 3, y + 34);
+      doc.text(`Mail- ${customer?.email || ''}`, m + 3, y + 39);
+      doc.text(`Vender Code- ${customer?.vendorCode || ''}`, m + 3, y + 43);
+
+      // Client ref grid
+      doc.line(gridX, y + 11, pw - m, y + 11);
+      doc.line(gridX, y + 22, pw - m, y + 22);
+      doc.line(gridX, y + 33, pw - m, y + 33);
+      doc.line(gridX + colW, y, gridX + colW, y + 33);
+
+      doc.setFontSize(9);
+      doc.text('Buyer\'s Order No.', gridX + 2, y + 5);
+      doc.text(refData.buyersOrderNo || '', gridX + 2, y + 10);
+      doc.text('Dated', gridX + colW + 2, y + 5);
+      doc.text(refData.buyersOrderDate || '', gridX + colW + 2, y + 10);
+
+      doc.text('Despatch Document No.', gridX + 2, y + 16);
+      doc.text(refData.despatchDocNo || '', gridX + 2, y + 21);
+      doc.text('Delivery Note Date', gridX + colW + 2, y + 16);
+      doc.text(refData.deliveryNoteDate || '', gridX + colW + 2, y + 21);
+
+      doc.text('Despatched through', gridX + 2, y + 27);
+      doc.text(refData.despatchedThrough || '', gridX + 2, y + 32);
+      doc.text('Destination', gridX + colW + 2, y + 27);
+      doc.text(refData.destination || '', gridX + colW + 2, y + 32);
+
+      doc.text('Terms of Delivery', gridX + 2, y + 38);
+      doc.text(refData.termsOfDelivery || '', gridX + 2, y + 43);
+
+      y += 45;
 
       // 3. ITEMS TABLE
       const tableHead = [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']];
@@ -279,37 +284,79 @@ export default function Invoices() {
       const rOff = (gtot - (subTotal + (taxAmount * 2)));
 
       const rows = items.map((it, i) => [
-        i + 1, it.description, it.hsnCode, it.uom, Number(it.quantity).toFixed(2), 
-        formatCurrency(it.rate), formatCurrency(it.amount)
+        { content: i + 1, styles: { halign: 'center' } },
+        { content: it.description, styles: { fontStyle: 'bold' } },
+        { content: it.hsnCode, styles: { halign: 'center' } },
+        { content: it.uom, styles: { halign: 'center' } },
+        { content: Number(it.quantity).toFixed(2), styles: { halign: 'center' } },
+        { content: formatCurrency(it.rate), styles: { halign: 'right' } },
+        { content: formatCurrency(it.amount), styles: { halign: 'right' } }
       ]);
 
-      // Add totals rows manually into autoTable
-      rows.push(['', { content: 'Sub total', colSpan: 5, styles: { halign: 'right' } }, formatCurrency(subTotal)]);
-      rows.push(['', { content: `CGST @ ${halfGst} %`, colSpan: 5, styles: { halign: 'right' } }, formatCurrency(taxAmount)]);
-      rows.push(['', { content: `SGST @ ${halfGst} %`, colSpan: 5, styles: { halign: 'right' } }, formatCurrency(taxAmount)]);
-      rows.push(['', { content: 'Round Off', colSpan: 5, styles: { halign: 'right' } }, (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2)]);
-      rows.push([{ content: `Amount Chargeable (Rs) : ${numberToWords(gtot)} Only.`, colSpan: 5, styles: { fontStyle: 'bold' } }, { content: 'Total', styles: { fontStyle: 'bold', halign: 'right' } }, { content: formatCurrency(gtot), styles: { fontStyle: 'bold' } }]);
+      // Add totals rows with specific NO-BORDER styles for the middle columns to match the sample
+      rows.push([
+        { content: '', styles: { border: [0, 1, 0, 1] } }, 
+        { content: 'Sub total', styles: { halign: 'right', fontStyle: 'bold' } }, 
+        { content: '', colSpan: 4, styles: { border: [0, 1, 0, 1] } }, 
+        { content: formatCurrency(subTotal), styles: { halign: 'right', fontStyle: 'bold' } }
+      ]);
+      rows.push([
+        { content: '', styles: { border: [0, 1, 0, 1] } }, 
+        { content: `CGST @ ${halfGst} %`, styles: { halign: 'right', fontStyle: 'bold' } }, 
+        { content: '', colSpan: 4, styles: { border: [0, 1, 0, 1] } }, 
+        { content: formatCurrency(taxAmount), styles: { halign: 'right', fontStyle: 'bold' } }
+      ]);
+      rows.push([
+        { content: '', styles: { border: [0, 1, 0, 1] } }, 
+        { content: `SGST @ ${halfGst} %`, styles: { halign: 'right', fontStyle: 'bold' } }, 
+        { content: '', colSpan: 4, styles: { border: [0, 1, 0, 1] } }, 
+        { content: formatCurrency(taxAmount), styles: { halign: 'right', fontStyle: 'bold' } }
+      ]);
+      rows.push([
+        { content: '', styles: { border: [0, 1, 0, 1] } }, 
+        { content: 'Round Off', styles: { halign: 'right' } }, 
+        { content: '', colSpan: 4, styles: { border: [0, 1, 0, 1] } }, 
+        { content: (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2), styles: { halign: 'right' } }
+      ]);
+      rows.push([
+        { content: '', styles: { border: [1, 1, 1, 1] } }, 
+        { content: 'Total', styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }, 
+        { content: '', colSpan: 4, styles: { border: [1, 1, 1, 1] } }, 
+        { content: formatCurrency(gtot), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }
+      ]);
 
       autoTable(doc, {
         startY: y,
         head: tableHead,
         body: rows,
         theme: 'grid',
-        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.3, lineColor: 0, fontStyle: 'bold', halign: 'center' },
-        styles: { fontSize: 8, cellPadding: 1.5, lineWidth: 0.3, lineColor: 0, textColor: 0 },
+        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.4, lineColor: 0, fontStyle: 'bold', halign: 'center', fontSize: 10 },
+        styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.4, lineColor: 0, textColor: 0, valign: 'top', overflow: 'linebreak' },
         columnStyles: {
-            0: { cellWidth: 10, halign: 'center' },
+            0: { cellWidth: 12 },
             1: { cellWidth: 80 },
-            2: { cellWidth: 18, halign: 'center' },
-            3: { cellWidth: 15, halign: 'center' },
-            4: { cellWidth: 15, halign: 'center' },
-            5: { cellWidth: 22, halign: 'right' },
-            6: { cellWidth: pw - m*2 - 160, halign: 'right' }
+            2: { cellWidth: 18 },
+            3: { cellWidth: 15 },
+            4: { cellWidth: 15 },
+            5: { cellWidth: 25 },
+            6: { cellWidth: pw - m*2 - 180 }
         },
         margin: { left: m, right: m }
       });
 
-      y = doc.lastAutoTable.finalY + 2;
+      y = doc.lastAutoTable.finalY + 1;
+      
+      // Amount in words bar
+      doc.setLineWidth(0.4);
+      doc.rect(m, y, cw, 8);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10.5);
+      doc.text(`Amount Chargeable (Rs) : ${numberToWords(gtot)}`, m + 3, y + 5.5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.text('E,& O.E', pw - m - 3, y + 5.5, { align: 'right' });
+      
+      y += 10;
 
       // 4. TAX BREAKUP TABLE
       const hsnSum = {};
@@ -602,9 +649,16 @@ export default function Invoices() {
                         <strong style={{ fontSize: 12, color: 'var(--primary-600)' }}>Item {i + 1}</strong>
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 3fr) 1fr', gap: 8, marginBottom: 8 }}>
-                        <div>
-                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>Description</label>
-                          <input className="form-input" style={{ fontSize: 13 }} value={item.description} onChange={e => updateEditItem(i, 'description', e.target.value)} disabled={selectedSale.isLocked} placeholder="Description" />
+                        <div style={{ flex: 1 }}>
+                          <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>Description of Goods</label>
+                          <textarea 
+                            className="form-input" 
+                            style={{ fontSize: 13, minHeight: '80px', resize: 'vertical' }} 
+                            value={item.description} 
+                            onChange={e => updateEditItem(i, 'description', e.target.value)} 
+                            disabled={selectedSale.isLocked} 
+                            placeholder="Description" 
+                          />
                         </div>
                         <div>
                           <label style={{ fontSize: 10, color: 'var(--gray-500)' }}>HSN/SAC</label>
