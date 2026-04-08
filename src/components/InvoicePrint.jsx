@@ -277,9 +277,9 @@ const InvoicePrint = ({ sale, customer, companyInfo, items }) => {
         @media screen {
           #invoice-print-container {
             position: absolute;
-            left: -9999px;
-            top: -9999px;
-            opacity: 0;
+            left: 0;
+            top: 0;
+            z-index: -9999; /* hiding under the main app */
             pointer-events: none;
           }
         }
