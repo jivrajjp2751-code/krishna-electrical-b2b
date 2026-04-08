@@ -236,12 +236,13 @@ export default function Invoices() {
       doc.rect(m + (cw*0.55), y, cw*0.45, 45); // Client Ref side grid
       
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(13);
+      doc.setFontSize(14);
       doc.text(`Client : ${customer?.name || 'Customer'}`, m + 3, y + 7);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(10.5);
+      doc.setFontSize(11);
       const custAddr = doc.splitTextToSize(customer?.address || '', (cw * 0.5) - 4);
       doc.text(custAddr, m + 3, y + 14);
+      doc.setFontSize(10.5);
       doc.text(`GST No. ${customer?.gstNumber || ''}`, m + 3, y + 34);
       doc.text(`Mail- ${customer?.email || ''}`, m + 3, y + 39);
       doc.text(`Vender Code- ${customer?.vendorCode || ''}`, m + 3, y + 43);
@@ -252,7 +253,7 @@ export default function Invoices() {
       doc.line(gridX, y + 33, pw - m, y + 33);
       doc.line(gridX + colW, y, gridX + colW, y + 33);
 
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.text('Buyer\'s Order No.', gridX + 2, y + 5);
       doc.text(refData.buyersOrderNo || '', gridX + 2, y + 10);
       doc.text('Dated', gridX + colW + 2, y + 5);
@@ -281,13 +282,13 @@ export default function Invoices() {
       const rOff = (gtot - (subTotal + (taxAmount * 2)));
 
       const rows = items.map((it, i) => [
-        { content: i + 1, styles: { halign: 'center' } },
-        { content: it.description, styles: { fontStyle: 'bold' } },
-        { content: it.hsnCode, styles: { halign: 'center' } },
-        { content: it.uom, styles: { halign: 'center' } },
-        { content: Number(it.quantity).toFixed(2), styles: { halign: 'center' } },
-        { content: formatCurrency(it.rate), styles: { halign: 'right' } },
-        { content: formatCurrency(it.amount), styles: { halign: 'right' } }
+        { content: i + 1, styles: { halign: 'center', fontSize: 11 } },
+        { content: it.description, styles: { fontStyle: 'bold', fontSize: 11 } },
+        { content: it.hsnCode, styles: { halign: 'center', fontSize: 11 } },
+        { content: it.uom, styles: { halign: 'center', fontSize: 11 } },
+        { content: Number(it.quantity).toFixed(2), styles: { halign: 'center', fontSize: 11 } },
+        { content: formatCurrency(it.rate), styles: { halign: 'right', fontSize: 11 } },
+        { content: formatCurrency(it.amount), styles: { halign: 'right', fontSize: 11 } }
       ]);
 
       // Add totals rows with specific NO-BORDER styles for the middle columns to match the sample
@@ -295,36 +296,36 @@ export default function Invoices() {
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', colSpan: 3, styles: { border: [0, 1, 0, 1] } }, 
-        { content: 'Sub total', styles: { halign: 'right', fontStyle: 'bold' } }, 
-        { content: formatCurrency(subTotal), styles: { halign: 'right', fontStyle: 'bold' } }
+        { content: 'Sub total', styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }, 
+        { content: formatCurrency(subTotal), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }
       ]);
       rows.push([
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', colSpan: 3, styles: { border: [0, 1, 0, 1] } }, 
-        { content: `CGST @ ${halfGst} %`, styles: { halign: 'right', fontStyle: 'bold' } }, 
-        { content: formatCurrency(taxAmount), styles: { halign: 'right', fontStyle: 'bold' } }
+        { content: `CGST @ ${halfGst} %`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }, 
+        { content: formatCurrency(taxAmount), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }
       ]);
       rows.push([
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', colSpan: 3, styles: { border: [0, 1, 0, 1] } }, 
-        { content: `SGST @ ${halfGst} %`, styles: { halign: 'right', fontStyle: 'bold' } }, 
-        { content: formatCurrency(taxAmount), styles: { halign: 'right', fontStyle: 'bold' } }
+        { content: `SGST @ ${halfGst} %`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }, 
+        { content: formatCurrency(taxAmount), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }
       ]);
       rows.push([
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', styles: { border: [0, 1, 0, 1] } }, 
         { content: '', colSpan: 3, styles: { border: [0, 1, 0, 1] } }, 
-        { content: 'Round Off', styles: { halign: 'right' } }, 
-        { content: (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2), styles: { halign: 'right' } }
+        { content: 'Round Off', styles: { halign: 'right', fontSize: 11 } }, 
+        { content: (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2), styles: { halign: 'right', fontSize: 11 } }
       ]);
       rows.push([
         { content: '', styles: { border: [0, 1, 1, 1] } }, 
         { content: '', styles: { border: [0, 1, 1, 1] } }, 
         { content: '', colSpan: 3, styles: { border: [0, 1, 1, 1] } }, 
-        { content: 'Total', styles: { halign: 'right', fontStyle: 'bold', fontSize: 11, border: [1, 1, 1, 1] } }, 
-        { content: formatCurrency(gtot), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11, border: [1, 1, 1, 1] } }
+        { content: 'Total', styles: { halign: 'right', fontStyle: 'bold', fontSize: 12, border: [1, 1, 1, 1] } }, 
+        { content: formatCurrency(gtot), styles: { halign: 'right', fontStyle: 'bold', fontSize: 12, border: [1, 1, 1, 1] } }
       ]);
 
       autoTable(doc, {
@@ -332,8 +333,8 @@ export default function Invoices() {
         head: tableHead,
         body: rows,
         theme: 'grid',
-        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.4, lineColor: 0, fontStyle: 'bold', halign: 'center', fontSize: 10 },
-        styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.4, lineColor: 0, textColor: 0, valign: 'top', overflow: 'linebreak' },
+        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.4, lineColor: 0, fontStyle: 'bold', halign: 'center', fontSize: 11 },
+        styles: { fontSize: 11, cellPadding: 2, lineWidth: 0.4, lineColor: 0, textColor: 0, valign: 'top', overflow: 'linebreak' },
         columnStyles: {
             0: { cellWidth: 10 },
             1: { cellWidth: 85 },
@@ -347,17 +348,14 @@ export default function Invoices() {
             // Remove horizontal lines between item rows in the body
             if (data.section === 'body' && data.row.index < items.length - 1) {
                 doc.setDrawColor(255, 255, 255); // White for horizontal line
-                // This is a bit tricky, but we can set the line color back for vertical lines in didDrawCell
             }
         },
         didDrawCell: (data) => {
             if (data.section === 'body') {
                 doc.setDrawColor(0);
-                // Draw vertical lines manually if we obscured them
                 doc.line(data.cell.x, data.cell.y, data.cell.x, data.cell.y + data.cell.height);
                 doc.line(data.cell.x + data.cell.width, data.cell.y, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
                 
-                // Only draw bottom line if it's the last item or specific total rows
                 if (data.row.index === items.length - 1 || data.row.index > items.length - 1) {
                     doc.line(data.cell.x, data.cell.y + data.cell.height, data.cell.x + data.cell.width, data.cell.y + data.cell.height);
                 }
@@ -372,10 +370,10 @@ export default function Invoices() {
       doc.setLineWidth(0.4);
       doc.rect(m, y, cw, 8);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10.5);
+      doc.setFontSize(11);
       doc.text(`Amount Chargeable (Rs) : ${numberToWords(gtot)}`, m + 3, y + 5.5);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(10);
       doc.text('E,& O.E', pw - m - 3, y + 5.5, { align: 'right' });
       
       y += 10;
@@ -402,8 +400,8 @@ export default function Invoices() {
         ],
         body: hsnRows,
         theme: 'grid',
-        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.3, lineColor: 0, fontSize: 7, halign: 'center' },
-        styles: { fontSize: 7, cellPadding: 1, lineWidth: 0.3, lineColor: 0, halign: 'right' },
+        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.3, lineColor: 0, fontSize: 8, halign: 'center' },
+        styles: { fontSize: 8.5, cellPadding: 1, lineWidth: 0.3, lineColor: 0, halign: 'right' },
         columnStyles: { 0: { halign: 'center' } },
         margin: { left: m, right: m }
       });
@@ -415,27 +413,31 @@ export default function Invoices() {
       doc.rect(m, footerY, cw, 40);
       doc.line(m + (cw * 0.6), footerY, m + (cw * 0.6), footerY + 40);
       
-      doc.setFontSize(8);
+      doc.setFontSize(10);
       doc.text(`Tax Amount: Rs. ${formatCurrency(taxAmount*2)}`, m + 2, footerY + 5);
       doc.setFont('helvetica', 'bold');
+      doc.setFontSize(12);
       doc.text('IDBI BANK, Koper Khairane- Navi Mumbai.', m + 2, footerY + 12);
       doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10.5);
       doc.text(`A/c No- 43110200 0001209 RTGS/NEFT Code-IBKL0000431`, m + 2, footerY + 17);
       
       doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
       doc.text('Declaration', m + 2, footerY + 28);
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(8.5);
       doc.text('We declare that this invoice shows the actual price of the goods described', m + 2, footerY + 33);
       doc.text('and that all particulars are true and correct.', m + 2, footerY + 36);
 
-      doc.setFontSize(9);
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
       doc.text(`For Krishna Electrical Works`, pw - m - 5, footerY + 8, { align: 'right' });
       doc.setFont('helvetica', 'bold');
       doc.text(`Authorised Signatory`, pw - m - 5, footerY + 35, { align: 'right' });
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(8);
+      doc.setFontSize(9);
       doc.text('This is a Computer Generated Invoice', pw/2, ph - 8, { align: 'center' });
 
       doc.save(`${sale.invoiceNo}.pdf`);
