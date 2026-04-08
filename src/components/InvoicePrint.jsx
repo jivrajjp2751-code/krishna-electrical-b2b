@@ -289,7 +289,7 @@ const InvoicePrint = ({ sale, customer, companyInfo, items }) => {
                 <span style={{fontSize: '10px'}}>We declare that this invoice shows the actual price of the<br/>goods described and that all particulars are true and correct.</span>
               </td>
 
-              <td className="right" style={{ verticalAlign: 'top', padding: '10px', position: 'relative' }}>
+              <td className="right" style={{ verticalAlign: 'top', padding: '10px', position: 'relative', height: '80px' }}>
                 <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
                     <span style={{fontSize: '13px'}}>For <b>Krishna Electrical Works</b></span>
                 </div>
