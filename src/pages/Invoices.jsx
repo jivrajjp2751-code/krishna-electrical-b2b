@@ -205,15 +205,19 @@ export default function Invoices() {
       doc.line(gridX, y + 30, pw - m, y + 30);
       doc.line(gridX + colW, y, gridX + colW, y + 45); // Vertical line through all rows
 
-      doc.setFontSize(10);
-      doc.text('Invoice No.', gridX + 2, y + 9);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(11.5);
+      doc.text('Invoice No.', gridX + 2, y + 10);
       doc.setFont('helvetica', 'bold');
-      doc.text(sale.invoiceNo.replace('inv-',''), gridX + 24, y + 9);
+      doc.setFontSize(13.5);
+      doc.text(sale.invoiceNo.replace('inv-',''), gridX + 26, y + 10);
       
       doc.setFont('helvetica', 'normal');
-      doc.text('Dated.', gridX + colW + 2, y + 9);
+      doc.setFontSize(11.5);
+      doc.text('Dated.', gridX + colW + 2, y + 10);
       doc.setFont('helvetica', 'bold');
-      doc.text(new Date(sale.date).toLocaleDateString('en-IN'), gridX + colW + 14, y + 9);
+      doc.setFontSize(13.5);
+      doc.text(new Date(sale.date).toLocaleDateString('en-IN'), gridX + colW + 16, y + 10);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
