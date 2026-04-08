@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import useStore from '../store/useStore';
+import html2pdf from 'html2pdf.js';
 import InvoicePrint from '../components/InvoicePrint';
 
 export default function Invoices() {
@@ -340,7 +341,20 @@ export default function Invoices() {
   };
 
   const printInvoice = () => {
-    window.print();
+    const element = document.getElementById('invoice-print-container');
+    if (!element) return;
+    
+    const opt = {
+      margin:       0.15,
+      filename:     `Invoice.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().set(opt).from(element).save().then(() => {
+      addToast('Invoice Downloaded directly', 'success');
+    });
   };
 
   const shareInvoiceWithFile = async (sale, method) => {
@@ -402,7 +416,7 @@ export default function Invoices() {
                               {s.isLocked && (
                                 <button className="btn btn-sm btn-outline" onClick={() => { setSelectedSaleId(s.id); setEditMode(true); }}><FileText size={13} /> View Details</button>
                               )}
-                              <button className="btn btn-sm btn-primary" onClick={() => { setSelectedSaleId(s.id); setTimeout(printInvoice, 300); }}><Printer size={13} /> Print/PDF</button>
+                              <button className="btn btn-sm btn-primary" onClick={() => { setSelectedSaleId(s.id); setTimeout(printInvoice, 300); }}><Download size={13} /> Download PDF</button>
                               <button className="btn btn-sm btn-success" onClick={() => sendWhatsApp(s)} title="WhatsApp"><MessageCircle size={13} /></button>
                               <button className="btn btn-sm btn-outline" onClick={() => sendEmail(s)} title="Email"><Mail size={13} /></button>
                             </div>
@@ -436,7 +450,7 @@ export default function Invoices() {
                 {selectedSale.isLocked && (
                   <>
                     <button className="btn btn-primary" onClick={printInvoice}>
-                      <Printer size={16} /> Print / Save as PDF
+                      <Download size={16} /> Download PDF
                     </button>
                     <button className="btn btn-success" onClick={() => sendWhatsApp(selectedSale)}>
                       <MessageCircle size={16} /> WhatsApp
