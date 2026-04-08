@@ -132,11 +132,8 @@ export default function Invoices() {
           return;
       }
 
-      // Add a quick visual loading toast
+      // Just a quick visual loading toast
       addToast(`Generating PDF for ${sale.invoiceNo}...`, 'info');
-
-      // Unhide the element just for capture, but keep it offscreen using position absolute
-      element.style.display = 'block';
 
       const opt = {
         margin:       [10, 10, 10, 10], // top, left, bottom, right in mm
@@ -148,9 +145,7 @@ export default function Invoices() {
 
       await html2pdf().set(opt).from(element).save();
       
-      // Hide back
-      element.style.display = 'none';
-      addToast(`Invoice ${sale.invoiceNo} downloaded successfully.`, 'success');
+      addToast(`Invoice ${sale.invoiceNo} downloaded!`, 'success');
     } catch (err) {
       console.error('PDF Error:', err);
       addToast(`PDF Error: ${err.message}`, 'error');
@@ -166,7 +161,6 @@ export default function Invoices() {
       }
       
       addToast(`Generating PDF to share...`, 'info');
-      element.style.display = 'block';
 
       const opt = {
         margin:       [10, 10, 10, 10], // top, left, bottom, right in mm
@@ -177,7 +171,6 @@ export default function Invoices() {
       };
 
       await html2pdf().set(opt).from(element).save();
-      element.style.display = 'none';
       
       const filename = `${sale.invoiceNo}.pdf`;
       
@@ -452,12 +445,10 @@ export default function Invoices() {
         </>
       )}
 
-      {/* INVISIBLE RENDER FOR HTML2PDF CAPTURE */}
-      <div style={{ display: 'none' }} id="hidden-invoice-print-wrappers">
+      {/* OFF-SCREEN RENDER FOR HTML2PDF CAPTURE (must be in DOM with layout for capture) */}
+      <div id="hidden-invoice-print-wrappers" style={{ position: 'absolute', left: '-9999px', top: '-9999px', pointerEvents: 'none' }}>
         {sales.map(sale => {
           const customer = customers.find(c => c.id === sale.customerId);
-          // When creating the PDF we need accurate data, so if we are viewing it or editing it, we use editData ONLY if it's the selected one.
-          // Otherwise we generate from sale info natively.
           let saleItems = [];
           if (sale.id === selectedSaleId && editData) {
               saleItems = editData.items;
@@ -475,15 +466,10 @@ export default function Invoices() {
                 };
               });
           }
-          // The sale reference might be supplemented by editData if we are actively editing
           const safeSale = (sale.id === selectedSaleId && editData) ? { ...sale, invoiceData: editData } : sale;
 
           return (
-            <div 
-              key={sale.id}
-              id={`invoice-print-capture-${sale.id}`} 
-              style={{ position: 'absolute', left: '-9999px', top: '-9999px', display: 'none', background: 'white' }}
-            >
+            <div key={sale.id} id={`invoice-print-capture-${sale.id}`}>
               <InvoicePrint 
                 sale={safeSale} 
                 customer={customer} 
