@@ -120,32 +120,257 @@ export default function Invoices() {
 
   const getGstRate = () => companyInfo.gstRate || 18;
   const getHalfGst = () => getGstRate() / 2;
+  const formatCurrency = (val) => Number(val).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const numberToWords = (num) => {
+    if (num === 0) return 'Zero';
+    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const convert = (n) => {
+      if (n === 0) return '';
+      if (n < 20) return ones[n];
+      if (n < 100) return tens[Math.floor(n / 10)] + (n % 10 ? ' ' + ones[n % 10] : '');
+      if (n < 1000) return ones[Math.floor(n / 100)] + ' Hundred' + (n % 100 ? ' and ' + convert(n % 100) : '');
+      if (n < 100000) return convert(Math.floor(n / 1000)) + ' Thousand' + (n % 1000 ? ' ' + convert(n % 1000) : '');
+      if (n < 10000000) return convert(Math.floor(n / 100000)) + ' Lakh' + (n % 100000 ? ' ' + convert(n % 100000) : '');
+      return convert(Math.floor(n / 10000000)) + ' Crore' + (n % 10000000 ? ' ' + convert(n % 10000000) : '');
+    };
+    return convert(Math.round(num));
+  };
 
   // ═══════════════════════════════════════════════
-  //  PDF GENERATION USING HTML2PDF & INVOICEPRINT
+  //  MANUAL HIGH-PRECISION PDF GENERATION (1:1)
   // ═══════════════════════════════════════════════
-  const generatePDF = async (sale, data) => {
+  const generatePDF = (sale, data) => {
     try {
-      const element = document.getElementById(`invoice-print-capture-${sale.id}`);
-      if (!element) {
-          addToast('Could not find invoice layout element for generation.', 'error');
-          return;
-      }
+      addToast(`Generating Invoice PDF...`, 'info');
+      const doc = new jsPDF();
+      const customer = customers.find(c => c.id === sale.customerId);
+      const items = data?.items || sale.invoiceData?.items || (sale.items || []).map(item => {
+        const product = products.find(p => p.id === item.productId);
+        return { 
+          description: product?.name || item.description || 'Product', 
+          hsnCode: item.hsnCode || product?.hsnCode || '', 
+          uom: item.uom || product?.unit || 'nos', 
+          quantity: Number(item.quantity) || 0, 
+          rate: Number(item.sellingPrice || item.rate) || 0, 
+          amount: Number(item.total || item.amount) || 0 
+        };
+      });
 
-      // Just a quick visual loading toast
-      addToast(`Generating PDF for ${sale.invoiceNo}...`, 'info');
-
-      const opt = {
-        margin:       [10, 10, 10, 10], // top, left, bottom, right in mm
-        filename:     `${sale.invoiceNo}.pdf`,
-        image:        { type: 'jpeg', quality: 1 },
-        html2canvas:  { scale: 3, useCORS: true, logging: false }, // high res scale
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
-
-      await html2pdf().set(opt).from(element).save();
+      const refData = data || sale.invoiceData || {};
+      const halfGst = getHalfGst();
       
-      addToast(`Invoice ${sale.invoiceNo} downloaded!`, 'success');
+      const m = 10; // margin
+      const pw = 210; // page width
+      const ph = 297; // page height
+      const cw = pw - (m * 2); // content width
+      let y = 10;
+
+      // 1. TOP BAR (TAX INVOICE)
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text('TAX INVOICE', pw/2, y + 5, { align: 'center' });
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Mob: ${companyInfo.phone}`, pw - m, y + 4, { align: 'right' });
+
+      y += 10;
+
+      // 2. MAIN BORDER BOX
+      const boxStartY = y;
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.3);
+
+      // --- SECTION 1: SUPPLIER ---
+      doc.rect(m, y, cw, 35); // Supplier box
+      doc.rect(m + (cw*0.55), y, cw*0.45, 35); // Ref side grid
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      doc.text(companyInfo.name, m + 2, y + 5);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8.5);
+      // Split address into lines if needed
+      const addrLines = doc.splitTextToSize(companyInfo.address, (cw * 0.5) - 4);
+      doc.text(addrLines, m + 2, y + 10);
+      doc.text(`GSTN/UIN: ${companyInfo.gstNumber}`, m + 2, y + 25);
+      doc.text(`State Name: Maharashtra, Code: 27`, m + 2, y + 29);
+      doc.text(`E-Mail: ${companyInfo.email}`, m + 2, y + 33);
+
+      // Ref fields grid (Right of Supplier)
+      doc.setLineWidth(0.2);
+      const gridX = m + (cw * 0.55);
+      const colW = (cw * 0.45) / 2;
+      
+      // Lines for the 3x2 grid
+      doc.line(gridX, y + 12, pw - m, y + 12);
+      doc.line(gridX, y + 24, pw - m, y + 24);
+      doc.line(gridX + colW, y, gridX + colW, y + 35);
+
+      doc.setFontSize(7.5);
+      doc.text('Invoice No.', gridX + 1, y + 4);
+      doc.setFont('helvetica', 'bold');
+      doc.text(sale.invoiceNo.replace('inv-',''), gridX + 1, y + 9);
+      
+      doc.setFont('helvetica', 'normal');
+      doc.text('Dated.', gridX + colW + 1, y + 4);
+      doc.setFont('helvetica', 'bold');
+      doc.text(new Date(sale.date).toLocaleDateString('en-IN'), gridX + colW + 1, y + 9);
+
+      doc.setFont('helvetica', 'normal');
+      doc.text('Delivery Note', gridX + 1, y + 16);
+      doc.text(refData.deliveryNote || '', gridX + 1, y + 21);
+
+      doc.text('Mode/Terms of Payment', gridX + colW + 1, y + 16);
+      doc.text(refData.paymentTerms || '', gridX + colW + 1, y + 21);
+
+      doc.text('Supplier\'s Ref.', gridX + 1, y + 28);
+      doc.text(refData.suppliersRef || '', gridX + 1, y + 33);
+
+      doc.text('Other Reference(s)', gridX + colW + 1, y + 28);
+      doc.text(refData.otherRef || '', gridX + colW + 1, y + 33);
+
+      y += 35;
+
+      // --- SECTION 2: CLIENT ---
+      doc.rect(m, y, cw, 40); // Client box
+      doc.rect(m + (cw*0.55), y, cw*0.45, 40); // Client Ref side grid
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Client : ${customer?.name || 'Customer'}`, m + 2, y + 5);
+      doc.setFont('helvetica', 'normal');
+      const custAddr = doc.splitTextToSize(customer?.address || '', (cw * 0.5) - 4);
+      doc.text(custAddr, m + 2, y + 10);
+      doc.text(`GSTN/UIN: ${customer?.gstNumber || ''}`, m + 2, y + 32);
+      doc.text(`Mail- ${customer?.email || ''}`, m + 2, y + 36);
+      doc.text(`Vender Code- ${customer?.vendorCode || ''}`, m + 2, y + 39);
+
+      // Client ref grid
+      doc.line(gridX, y + 10, pw - m, y + 10);
+      doc.line(gridX, y + 20, pw - m, y + 20);
+      doc.line(gridX, y + 30, pw - m, y + 30);
+      doc.line(gridX + colW, y, gridX + colW, y + 30);
+
+      doc.text('Buyer\'s Order No.', gridX + 1, y + 4);
+      doc.text(refData.buyersOrderNo || '', gridX + 1, y + 9);
+      doc.text('Dated', gridX + colW + 1, y + 4);
+      doc.text(refData.buyersOrderDate || '', gridX + colW + 1, y + 9);
+
+      doc.text('Despatch Document No.', gridX + 1, y + 14);
+      doc.text(refData.despatchDocNo || '', gridX + 1, y + 19);
+      doc.text('Delivery Note Date', gridX + colW + 1, y + 14);
+      doc.text(refData.deliveryNoteDate || '', gridX + colW + 1, y + 19);
+
+      doc.text('Despatched through', gridX + 1, y + 24);
+      doc.text(refData.despatchedThrough || '', gridX + 1, y + 29);
+      doc.text('Destination', gridX + colW + 1, y + 24);
+      doc.text(refData.destination || '', gridX + colW + 1, y + 29);
+
+      doc.text('Terms of Delivery', gridX + 1, y + 34);
+      doc.text(refData.termsOfDelivery || '', gridX + 1, y + 39);
+
+      y += 40;
+
+      // 3. ITEMS TABLE
+      const tableHead = [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']];
+      const subTotal = items.reduce((s, it) => s + (it.amount || 0), 0);
+      const taxAmount = Math.round(subTotal * halfGst / 100); 
+      const gtot = Math.round(subTotal + (taxAmount * 2));
+      const rOff = (gtot - (subTotal + (taxAmount * 2)));
+
+      const rows = items.map((it, i) => [
+        i + 1, it.description, it.hsnCode, it.uom, Number(it.quantity).toFixed(2), 
+        formatCurrency(it.rate), formatCurrency(it.amount)
+      ]);
+
+      // Add totals rows manually into autoTable
+      rows.push(['', { content: 'Sub total', colSpan: 5, styles: { halign: 'right' } }, formatCurrency(subTotal)]);
+      rows.push(['', { content: `CGST @ ${halfGst} %`, colSpan: 5, styles: { halign: 'right' } }, formatCurrency(taxAmount)]);
+      rows.push(['', { content: `SGST @ ${halfGst} %`, colSpan: 5, styles: { halign: 'right' } }, formatCurrency(taxAmount)]);
+      rows.push(['', { content: 'Round Off', colSpan: 5, styles: { halign: 'right' } }, (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2)]);
+      rows.push([{ content: `Amount Chargeable (Rs) : ${numberToWords(gtot)} Only.`, colSpan: 5, styles: { fontStyle: 'bold' } }, { content: 'Total', styles: { fontStyle: 'bold', halign: 'right' } }, { content: formatCurrency(gtot), styles: { fontStyle: 'bold' } }]);
+
+      autoTable(doc, {
+        startY: y,
+        head: tableHead,
+        body: rows,
+        theme: 'grid',
+        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.3, lineColor: 0, fontStyle: 'bold', halign: 'center' },
+        styles: { fontSize: 8, cellPadding: 1.5, lineWidth: 0.3, lineColor: 0, textColor: 0 },
+        columnStyles: {
+            0: { cellWidth: 10, halign: 'center' },
+            1: { cellWidth: 80 },
+            2: { cellWidth: 18, halign: 'center' },
+            3: { cellWidth: 15, halign: 'center' },
+            4: { cellWidth: 15, halign: 'center' },
+            5: { cellWidth: 22, halign: 'right' },
+            6: { cellWidth: pw - m*2 - 160, halign: 'right' }
+        },
+        margin: { left: m, right: m }
+      });
+
+      y = doc.lastAutoTable.finalY + 2;
+
+      // 4. TAX BREAKUP TABLE
+      const hsnSum = {};
+      items.forEach(it => {
+        const h = it.hsnCode || '—';
+        if (!hsnSum[h]) hsnSum[h] = 0;
+        hsnSum[h] += (it.amount || 0);
+      });
+
+      const hsnRows = Object.entries(hsnSum).map(([h, val]) => {
+        const t = Math.round(val * halfGst / 100);
+        return [h, formatCurrency(val), `${halfGst}%`, formatCurrency(t), `${halfGst}%`, formatCurrency(t), formatCurrency(t*2)];
+      });
+      hsnRows.push([{ content: 'Total', styles: { halign: 'right', fontStyle: 'bold' } }, { content: formatCurrency(subTotal), styles: { fontStyle: 'bold' } }, '', { content: formatCurrency(taxAmount), styles: { fontStyle: 'bold' } }, '', { content: formatCurrency(taxAmount), styles: { fontStyle: 'bold' } }, { content: formatCurrency(taxAmount*2), styles: { fontStyle: 'bold' } }]);
+
+      autoTable(doc, {
+        startY: y,
+        head: [
+            [{ content: 'HSN/SAC', rowSpan: 2 }, { content: 'Taxable\nValue', rowSpan: 2 }, { content: 'Central Tax', colSpan: 2 }, { content: 'State Tax', colSpan: 2 }, { content: 'Total\nTax Amount', rowSpan: 2 }],
+            ['Rate', 'Amount', 'Rate', 'Amount']
+        ],
+        body: hsnRows,
+        theme: 'grid',
+        headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.3, lineColor: 0, fontSize: 7, halign: 'center' },
+        styles: { fontSize: 7, cellPadding: 1, lineWidth: 0.3, lineColor: 0, halign: 'right' },
+        columnStyles: { 0: { halign: 'center' } },
+        margin: { left: m, right: m }
+      });
+
+      y = doc.lastAutoTable.finalY + 2;
+
+      // 5. FOOTER
+      const footerY = y;
+      doc.rect(m, footerY, cw, 40);
+      doc.line(m + (cw * 0.6), footerY, m + (cw * 0.6), footerY + 40);
+      
+      doc.setFontSize(8);
+      doc.text(`Tax Amount: Rs. ${formatCurrency(taxAmount*2)}`, m + 2, footerY + 5);
+      doc.setFont('helvetica', 'bold');
+      doc.text(companyInfo.bankName || 'IDBI BANK, Koper Khairane- Navi Mumbai.', m + 2, footerY + 12);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`A/c No- ${companyInfo.accountNo || '43110200 0001209'} RTGS/NEFT Code-${companyInfo.ifsc || 'IBKL0000431'}`, m + 2, footerY + 17);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('Declaration', m + 2, footerY + 28);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.text('We declare that this invoice shows the actual price of the goods described', m + 2, footerY + 33);
+      doc.text('and that all particulars are true and correct.', m + 2, footerY + 36);
+
+      doc.setFontSize(9);
+      doc.text(`For Krishna Electrical Works`, pw - m - 5, footerY + 8, { align: 'right' });
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Authorised Signatory`, pw - m - 5, footerY + 35, { align: 'right' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(8);
+      doc.text('This is a Computer Generated Invoice', pw/2, ph - 8, { align: 'center' });
+
+      doc.save(`${sale.invoiceNo}.pdf`);
+      addToast(`Invoice ${sale.invoiceNo} saved!`, 'success');
     } catch (err) {
       console.error('PDF Error:', err);
       addToast(`PDF Error: ${err.message}`, 'error');
