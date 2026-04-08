@@ -124,7 +124,7 @@ export default function Invoices() {
   const numberToWords = (num) => {
     if (num === 0) return 'Zero';
     const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-    const tens = ['', '', 'Twenty', 'Thirty', 'Fourty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+    const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
     const convert = (n) => {
       if (n === 0) return '';
       if (n < 20) return ones[n];
@@ -205,18 +205,16 @@ export default function Invoices() {
       doc.line(gridX, y + 30, pw - m, y + 30);
       doc.line(gridX + colW, y, gridX + colW, y + 30);
 
-      doc.setFontSize(9);
-      doc.text('Invoice No.', gridX + 2, y + 6);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(10);
+      doc.text('Invoice No.', gridX + 2, y + 9);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text(sale.invoiceNo.replace('inv-',''), gridX + 22, y + 6);
+      doc.text(sale.invoiceNo.replace('inv-',''), gridX + 22, y + 9);
       
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
-      doc.text('Dated.', gridX + colW + 2, y + 6);
+      doc.text('Dated.', gridX + colW + 2, y + 9);
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
-      doc.text(new Date(sale.date).toLocaleDateString('en-IN'), gridX + colW + 15, y + 6);
+      doc.text(new Date(sale.date).toLocaleDateString('en-IN'), gridX + colW + 14, y + 9);
 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
@@ -333,13 +331,13 @@ export default function Invoices() {
         headStyles: { fillColor: 255, textColor: 0, lineWidth: 0.4, lineColor: 0, fontStyle: 'bold', halign: 'center', fontSize: 10 },
         styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.4, lineColor: 0, textColor: 0, valign: 'top', overflow: 'linebreak' },
         columnStyles: {
-            0: { cellWidth: 12 },
-            1: { cellWidth: 80 },
+            0: { cellWidth: 10 },
+            1: { cellWidth: 85 },
             2: { cellWidth: 18 },
             3: { cellWidth: 15 },
             4: { cellWidth: 15 },
-            5: { cellWidth: 25 },
-            6: { cellWidth: pw - m*2 - 180 }
+            5: { cellWidth: 22 },
+            6: { cellWidth: 25 }
         },
         margin: { left: m, right: m }
       });
@@ -396,9 +394,9 @@ export default function Invoices() {
       doc.setFontSize(8);
       doc.text(`Tax Amount: Rs. ${formatCurrency(taxAmount*2)}`, m + 2, footerY + 5);
       doc.setFont('helvetica', 'bold');
-      doc.text(companyInfo.bankName || 'IDBI BANK, Koper Khairane- Navi Mumbai.', m + 2, footerY + 12);
+      doc.text('IDBI BANK, Koper Khairane- Navi Mumbai.', m + 2, footerY + 12);
       doc.setFont('helvetica', 'normal');
-      doc.text(`A/c No- ${companyInfo.accountNo || '43110200 0001209'} RTGS/NEFT Code-${companyInfo.ifsc || 'IBKL0000431'}`, m + 2, footerY + 17);
+      doc.text(`A/c No- 43110200 0001209 RTGS/NEFT Code-IBKL0000431`, m + 2, footerY + 17);
       
       doc.setFont('helvetica', 'bold');
       doc.text('Declaration', m + 2, footerY + 28);
