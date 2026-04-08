@@ -5,6 +5,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import useStore from '../store/useStore';
+import InvoicePrint from '../components/InvoicePrint';
 
 export default function Invoices() {
   const [searchParams] = useSearchParams();
@@ -338,38 +339,23 @@ export default function Invoices() {
     return doc;
   };
 
-  const generatePDF = (sale, data) => {
-    try {
-      const doc = buildPDF(sale, data);
-      doc.save(`${sale.invoiceNo}.pdf`);
-      addToast(`Invoice ${sale.invoiceNo} downloaded`, 'success');
-    } catch (err) {
-      console.error('PDF Error:', err);
-      addToast(`PDF Error: ${err.message}`, 'error');
-    }
+  const printInvoice = () => {
+    window.print();
   };
 
   const shareInvoiceWithFile = async (sale, method) => {
     try {
-      const doc = buildPDF(sale, null);
-      const filename = `${sale.invoiceNo}.pdf`;
-      
       const customer = customers.find(c => c.id === sale.customerId);
       const phone = (customer?.phone || '').replace(/[^0-9]/g, '');
 
-      doc.save(filename);
-      addToast('Draft Downloaded. Please share manually.', 'info');
-      
-      setTimeout(() => {
-        if (method === 'whatsapp') {
-          const text = encodeURIComponent(`*Invoice: ${sale.invoiceNo}*\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nPDF downloaded to your device.`);
-          window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
-        } else {
-          const subject = encodeURIComponent(`Invoice ${sale.invoiceNo}`);
-          const body = encodeURIComponent(`Invoice: ${sale.invoiceNo}\nAmount: Rs.${sale.totalAmount.toLocaleString('en-IN')}`);
-          window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${customer?.email || ''}&su=${subject}&body=${body}`, '_blank');
-        }
-      }, 300);
+      if (method === 'whatsapp') {
+        const text = encodeURIComponent(`*Invoice: ${sale.invoiceNo}*\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nInvoice is ready in your portal.`);
+        window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
+      } else {
+        const subject = encodeURIComponent(`Invoice ${sale.invoiceNo}`);
+        const body = encodeURIComponent(`Invoice: ${sale.invoiceNo}\nAmount: Rs.${sale.totalAmount.toLocaleString('en-IN')}`);
+        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${customer?.email || ''}&su=${subject}&body=${body}`, '_blank');
+      }
     } catch (err) {
       console.error('Share Error:', err);
       addToast(`Error: ${err.message}`, 'error');
@@ -416,7 +402,7 @@ export default function Invoices() {
                               {s.isLocked && (
                                 <button className="btn btn-sm btn-outline" onClick={() => { setSelectedSaleId(s.id); setEditMode(true); }}><FileText size={13} /> View Details</button>
                               )}
-                              <button className="btn btn-sm btn-primary" onClick={() => generatePDF(s, null)}><Download size={13} /> PDF</button>
+                              <button className="btn btn-sm btn-primary" onClick={() => { setSelectedSaleId(s.id); setTimeout(printInvoice, 300); }}><Printer size={13} /> Print/PDF</button>
                               <button className="btn btn-sm btn-success" onClick={() => sendWhatsApp(s)} title="WhatsApp"><MessageCircle size={13} /></button>
                               <button className="btn btn-sm btn-outline" onClick={() => sendEmail(s)} title="Email"><Mail size={13} /></button>
                             </div>
@@ -449,8 +435,8 @@ export default function Invoices() {
                 )}
                 {selectedSale.isLocked && (
                   <>
-                    <button className="btn btn-primary" onClick={() => generatePDF(selectedSale, editData)}>
-                      <Download size={16} /> Download PDF
+                    <button className="btn btn-primary" onClick={printInvoice}>
+                      <Printer size={16} /> Print / Save as PDF
                     </button>
                     <button className="btn btn-success" onClick={() => sendWhatsApp(selectedSale)}>
                       <MessageCircle size={16} /> WhatsApp
@@ -624,6 +610,15 @@ export default function Invoices() {
             </div>
           )}
         </>
+      )}
+
+      {selectedSale && editData && (
+        <InvoicePrint 
+          sale={selectedSale} 
+          customer={selectedCustomer} 
+          companyInfo={companyInfo} 
+          items={editData.items} 
+        />
       )}
     </div>
   );
