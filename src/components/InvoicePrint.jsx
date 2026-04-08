@@ -230,6 +230,7 @@ const InvoicePrint = ({ sale, customer, companyInfo, items }) => {
                     <th rowSpan={2} width="100">Taxable<br/>Value</th>
                     <th colSpan={2}>Central Tax</th>
                     <th colSpan={2}>State Tax</th>
+                    <th rowSpan={2} width="100">Total<br/>Tax Amount</th>
                 </tr>
                 <tr>
                     <th width="50">Rate</th>
@@ -239,14 +240,30 @@ const InvoicePrint = ({ sale, customer, companyInfo, items }) => {
                 </tr>
             </thead>
             <tbody>
-                <tr>
-                    <td>{items[0]?.hsnCode || '9987'}</td>
-                    <td className="right">{formatCurrency(subTotal)}</td>
-                    <td className="center">{gstRate}%</td>
-                    <td className="right">{formatCurrency(tax)}</td>
-                    <td className="center">{gstRate}%</td>
-                    <td className="right">{formatCurrency(tax)}</td>
-                </tr>
+                {(() => {
+                    const hsnGroups = {};
+                    (items || []).forEach(item => {
+                        const hsn = item.hsnCode || '—';
+                        if (!hsnGroups[hsn]) hsnGroups[hsn] = 0;
+                        hsnGroups[hsn] += (item.amount || 0);
+                    });
+
+                    return Object.entries(hsnGroups).map(([hsn, taxableValue], idx) => {
+                        const centralTax = Math.round(taxableValue * gstRate / 100);
+                        const stateTax = Math.round(taxableValue * gstRate / 100);
+                        return (
+                            <tr key={idx}>
+                                <td>{hsn}</td>
+                                <td className="right">{formatCurrency(taxableValue)}</td>
+                                <td className="center">{gstRate}%</td>
+                                <td className="right">{formatCurrency(centralTax)}</td>
+                                <td className="center">{gstRate}%</td>
+                                <td className="right">{formatCurrency(stateTax)}</td>
+                                <td className="right">{formatCurrency(centralTax + stateTax)}</td>
+                            </tr>
+                        );
+                    });
+                })()}
                 <tr>
                     <td className="right bold">Total</td>
                     <td className="right bold">{formatCurrency(subTotal)}</td>
@@ -254,6 +271,7 @@ const InvoicePrint = ({ sale, customer, companyInfo, items }) => {
                     <td className="right bold">{formatCurrency(tax)}</td>
                     <td className="center"></td>
                     <td className="right bold">{formatCurrency(tax)}</td>
+                    <td className="right bold">{formatCurrency(tax + tax)}</td>
                 </tr>
             </tbody>
          </table>
@@ -345,11 +363,7 @@ const InvoicePrint = ({ sale, customer, companyInfo, items }) => {
 
         @media screen {
           #invoice-print-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            z-index: -9999; /* hiding under the main app */
-            pointer-events: none;
+            display: none;
           }
         }
 

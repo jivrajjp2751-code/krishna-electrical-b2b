@@ -3,9 +3,9 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FileText, Download, Mail, Search, ArrowLeft, Printer, MessageCircle, Edit2, Save, Table } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import html2pdf from 'html2pdf.js';
 import * as XLSX from 'xlsx';
 import useStore from '../store/useStore';
-import html2pdf from 'html2pdf.js';
 import InvoicePrint from '../components/InvoicePrint';
 
 export default function Invoices() {
@@ -122,254 +122,80 @@ export default function Invoices() {
   const getHalfGst = () => getGstRate() / 2;
 
   // ═══════════════════════════════════════════════
-  //  PDF GENERATION — matches exact image format
+  //  PDF GENERATION USING HTML2PDF & INVOICEPRINT
   // ═══════════════════════════════════════════════
-  const buildPDF = (sale, data) => {
-    const customer = customers.find(c => c.id === sale.customerId);
-    const items = data?.items || sale.invoiceData?.items || (sale.items || []).map(item => {
-      const product = products.find(p => p.id === item.productId);
-      return { 
-        description: product?.name || item.description || 'Product', 
-        hsnCode: item.hsnCode || product?.hsnCode || '', 
-        uom: item.uom || product?.unit || 'nos', 
-        quantity: Number(item.quantity) || 0, 
-        rate: Number(item.sellingPrice || item.rate) || 0, 
-        discount: Number(item.discount) || 0, 
-        amount: Number(item.total || item.amount) || 0 
+  const generatePDF = async (sale, data) => {
+    try {
+      const element = document.getElementById(`invoice-print-capture-${sale.id}`);
+      if (!element) {
+          addToast('Could not find invoice layout element for generation.', 'error');
+          return;
+      }
+
+      // Add a quick visual loading toast
+      addToast(`Generating PDF for ${sale.invoiceNo}...`, 'info');
+
+      // Unhide the element just for capture, but keep it offscreen using position absolute
+      element.style.display = 'block';
+
+      const opt = {
+        margin:       [10, 10, 10, 10], // top, left, bottom, right in mm
+        filename:     `${sale.invoiceNo}.pdf`,
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { scale: 3, useCORS: true, logging: false }, // high res scale
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
-    });
 
-    const refData = data || sale.invoiceData || {};
-
-    const doc = new jsPDF();
-    const pageW = doc.internal.pageSize.getWidth();
-    const pageH = doc.internal.pageSize.getHeight();
-    const m = 10; 
-    const cw = pageW - m * 2; 
-    const halfGst = getHalfGst();
-    let y = 12;
-
-    doc.setDrawColor(0);
-    doc.setLineWidth(0.3);
-
-    // ── MOBILE ──
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Mob: ${companyInfo.phone}`, pageW - m, y, { align: 'right' });
-    
-    // ── TITLE ──
-    doc.setFontSize(22);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Tax Invoice', pageW / 2, y, { align: 'center' });
-    
-    y += 5;
-    const displayInvNo = (sale.invoiceNo || '').replace(/inv-/i, '');
-
-    // ── HEADER TABLE ──
-    const headerData = [
-      [
-        { content: `${companyInfo.name}\n${companyInfo.address}\n\nGSTN NO: ${companyInfo.gstNumber}  PAN NO: ${companyInfo.pan}\nMail ID: ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 10, cellPadding: 1.5, halign: 'left', valign: 'top' } },
-        { content: `Invoice No.\n${displayInvNo}`, styles: { halign: 'left', fontSize: 9 } },
-        { content: `Dated.\n${new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, styles: { halign: 'left', fontSize: 9 } }
-      ],
-      [
-        { content: `Delivery Note.\n${refData.deliveryNote || ''}`, styles: { halign: 'left', fontSize: 9 } },
-        { content: `Mode/Terms of Payment\n${refData.paymentTerms || ''}`, styles: { halign: 'left', fontSize: 9 } }
-      ],
-      [
-        { content: `Suppliers Ref.\n${refData.suppliersRef || ''}`, styles: { halign: 'left', fontSize: 9 } },
-        { content: `Other Reference(s)\n${refData.otherRef || ''}`, styles: { halign: 'left', fontSize: 9 } }
-      ],
-      [
-        { content: `Client : ${customer?.name || 'Customer'}\n${customer?.address || ''}\n\nGST No. ${customer?.gstNumber || ''}\nMail- ${customer?.email || ''}\nVender Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 10, cellPadding: 1.5, halign: 'left', valign: 'top' } },
-        { content: `Buyers Order No.\n${refData.buyersOrderNo || ''}`, styles: { halign: 'left', fontSize: 9 } },
-        { content: `Dated.\n${refData.buyersOrderDate || ''}`, styles: { halign: 'left', fontSize: 9 } }
-      ],
-      [
-        { content: `Despatch Document No.\n${refData.despatchDocNo || ''}`, styles: { halign: 'left', fontSize: 9 } },
-        { content: `Delivery Note Date\n${refData.deliveryNoteDate || ''}`, styles: { halign: 'left', fontSize: 9 } }
-      ],
-      [
-        { content: `Despatched through\n${refData.despatchedThrough || ''}`, styles: { halign: 'left', fontSize: 9 } },
-        { content: `Destination\n${refData.destination || ''}`, styles: { halign: 'left', fontSize: 9 } }
-      ],
-      [
-        { content: `Terms of Delivery\n${refData.termsOfDelivery || ''}`, colSpan: 2, styles: { halign: 'left', fontSize: 9 } }
-      ]
-    ];
-
-    autoTable(doc, {
-      startY: y,
-      body: headerData,
-      theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 1.2, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], overflow: 'linebreak' },
-      columnStyles: { 0: { cellWidth: cw * 0.52 }, 1: { cellWidth: cw * 0.19 }, 2: { cellWidth: cw * 0.29 } },
-      margin: { left: m, right: m },
-    });
-
-    y = doc.lastAutoTable.finalY + 0.5;
-
-    // ── MAIN ITEMS TABLE (COMPRESSED) ──
-    const subTotal = items.reduce((s, it) => s + (it.amount || 0), 0);
-    const taxAmount = Math.round(subTotal * halfGst / 100); 
-    const gtot = Math.round(subTotal + (taxAmount * 2));
-    const rOff = (gtot - (subTotal + (taxAmount * 2)));
-
-    const itemRows = items.map((item, i) => [
-      i + 1,
-      item.description,
-      item.hsnCode || '',
-      item.uom,
-      Number(item.quantity).toFixed(2),
-      Number(item.rate).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-      Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-    ]);
-
-    // Totals rows integrated into main table body
-    const totalsTableRows = [
-      [{ content: 'Sub total', colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }],
-      [{ content: `CGST @ ${halfGst} %`, colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }],
-      [{ content: `SGST @ ${halfGst} %`, colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }],
-      [{ content: 'Round Off', colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2), styles: { halign: 'right' } }],
-      [{ content: 'Total', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fontSize: 11, border: [1, 1, 1, 1] } }, { content: gtot.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11, border: [1, 1, 1, 1] } }]
-    ];
-
-    autoTable(doc, {
-      startY: y,
-      head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']],
-      body: [...itemRows, ...totalsTableRows],
-      theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 10, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 1.5 },
-      styles: { fontSize: 10, cellPadding: 1.5, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], valign: 'top' },
-      columnStyles: {
-        0: { cellWidth: cw * 0.05, halign: 'center' },
-        1: { cellWidth: cw * 0.44 },
-        2: { cellWidth: cw * 0.10, halign: 'center' },
-        3: { cellWidth: cw * 0.10, halign: 'center' },
-        4: { cellWidth: cw * 0.08, halign: 'center' },
-        5: { cellWidth: cw * 0.11, halign: 'right' },
-        6: { cellWidth: cw * 0.12, halign: 'right' },
-      },
-      margin: { left: m, right: m },
-    });
-
-    y = doc.lastAutoTable.finalY + 0.5;
-
-    // ── WORDS BAR ──
-    autoTable(doc, {
-      startY: y,
-      body: [[{ content: `Amount Chargable (Rs) : ${numberToWords(gtot)} Only.`, styles: { fontStyle: 'bold', fontSize: 10 } }, { content: `E,& O.E`, styles: { halign: 'right', fontSize: 9 } }]],
-      theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 1.5, lineWidth: 0.3, lineColor: [0, 0, 0] },
-      margin: { left: m, right: m }
-    });
-
-    y = doc.lastAutoTable.finalY + 2;
-
-    // ── HSN SUMMARY TABLE (COMPACT) ──
-    const hsnRows = [];
-    const groupedHsn = items.reduce((acc, item) => {
-      const code = item.hsnCode || '—';
-      if (!acc[code]) acc[code] = 0;
-      acc[code] += Number(item.amount);
-      return acc;
-    }, {});
-
-    let grandTaxable = 0, grandC = 0, grandS = 0;
-    Object.keys(groupedHsn).forEach(code => {
-      const taxable = groupedHsn[code];
-      const c = Math.round(taxable * halfGst / 100), s = Math.round(taxable * halfGst / 100);
-      grandTaxable += taxable; grandC += c; grandS += s;
-      hsnRows.push([code, taxable.toLocaleString('en-IN', { minimumFractionDigits: 2 }), `${halfGst}%`, c.toLocaleString('en-IN', { minimumFractionDigits: 2 }), `${halfGst}%`, s.toLocaleString('en-IN', { minimumFractionDigits: 2 }), (c + s).toLocaleString('en-IN', { minimumFractionDigits: 2 })]);
-    });
-
-    hsnRows.push([{ content: 'Total', styles: { halign: 'right', fontStyle: 'bold' } }, { content: grandTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }, '', { content: grandC.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }, '', { content: grandS.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }, { content: (grandC + grandS).toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]);
-
-    autoTable(doc, {
-      startY: y,
-      head: [
-        [{ content: 'HSN/SAC', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }, { content: 'Taxable\nValue', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }, { content: 'Central Tax', colSpan: 2, styles: { halign: 'center' } }, { content: 'State Tax', colSpan: 2, styles: { halign: 'center' } }, { content: 'Total\nTax Amount', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }],
-        ['Rate', 'Amount', 'Rate', 'Amount']
-      ],
-      body: hsnRows,
-      theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 8, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 1 },
-      styles: { fontSize: 8.5, cellPadding: 1.2, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], halign: 'right' },
-      columnStyles: { 0: { halign: 'center', cellWidth: cw * 0.20 }, 1: { cellWidth: cw * 0.15 }, 2: { halign: 'center', cellWidth: cw * 0.08 }, 3: { cellWidth: cw * 0.12 }, 4: { halign: 'center', cellWidth: cw * 0.08 }, 5: { cellWidth: cw * 0.12 }, 6: { cellWidth: cw * 0.25 } },
-      margin: { left: m, right: m },
-    });
-
-    y = doc.lastAutoTable.finalY;
-    autoTable(doc, {
-      startY: y,
-      body: [[{ content: `Tax Amount (in words) : Rs. ${numberToWords(grandC + grandS)} Only.`, styles: { fontStyle: 'bold', fontSize: 9.5 } }]],
-      theme: 'grid',
-      styles: { fontSize: 9.5, cellPadding: 1.5, lineWidth: 0.3, lineColor: [0, 0, 0] },
-      margin: { left: m, right: m }
-    });
-    
-    y = doc.lastAutoTable.finalY + 2;
-
-    // ── COMPACT FOOTER (BANK, DECLARATION, SIG) ──
-    doc.setLineWidth(0.3);
-    doc.line(m, y, pageW - m, y); // Top border of footer box
-
-    const lineH = 4.2;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${companyInfo.bankName}`, m + 2, y + lineH);
-    doc.text(`A/c No- ${companyInfo.accountNo} RTGS/NEFT Code-${companyInfo.ifsc}`, m + 2, y + lineH * 2);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Declaration', m + 2, y + lineH * 3.5);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.text('We declare that this invoice shows the actual price of the goods described', m + 2, y + lineH * 4.8);
-    doc.text('and that all particulars are true and correct.', m + 2, y + lineH * 5.6);
-
-    const signatureName = companyInfo.name.startsWith('M/S. ') ? companyInfo.name.substring(5) : companyInfo.name;
-    doc.setFontSize(10);
-    doc.text(`For ${signatureName}`, pageW - m - 5, y + lineH * 3.5, { align: 'right' });
-    doc.setFont('helvetica', 'bold');
-    doc.text('Authorised Signatory', pageW - m - 5, y + lineH * 7, { align: 'right' });
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('This is a Computer Generated Invoice', pageW / 2, pageH - 6, { align: 'center' });
-
-    return doc;
-  };
-
-  const printInvoice = () => {
-    const element = document.getElementById('invoice-print-container');
-    if (!element) return;
-    
-    const opt = {
-      margin:       0.15,
-      filename:     `Invoice.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true, windowWidth: 1024, scrollY: 0 },
-      jsPDF:        { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().set(opt).from(element).save().then(() => {
-      addToast('Invoice Downloaded directly', 'success');
-    });
+      await html2pdf().set(opt).from(element).save();
+      
+      // Hide back
+      element.style.display = 'none';
+      addToast(`Invoice ${sale.invoiceNo} downloaded successfully.`, 'success');
+    } catch (err) {
+      console.error('PDF Error:', err);
+      addToast(`PDF Error: ${err.message}`, 'error');
+    }
   };
 
   const shareInvoiceWithFile = async (sale, method) => {
     try {
+      const element = document.getElementById(`invoice-print-capture-${sale.id}`);
+      if (!element) {
+          addToast('Could not find invoice layout element for generation.', 'error');
+          return;
+      }
+      
+      addToast(`Generating PDF to share...`, 'info');
+      element.style.display = 'block';
+
+      const opt = {
+        margin:       [10, 10, 10, 10], // top, left, bottom, right in mm
+        filename:     `${sale.invoiceNo}.pdf`,
+        image:        { type: 'jpeg', quality: 1 },
+        html2canvas:  { scale: 3, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+      element.style.display = 'none';
+      
+      const filename = `${sale.invoiceNo}.pdf`;
+      
       const customer = customers.find(c => c.id === sale.customerId);
       const phone = (customer?.phone || '').replace(/[^0-9]/g, '');
 
-      if (method === 'whatsapp') {
-        const text = encodeURIComponent(`*Invoice: ${sale.invoiceNo}*\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nInvoice is ready in your portal.`);
-        window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
-      } else {
-        const subject = encodeURIComponent(`Invoice ${sale.invoiceNo}`);
-        const body = encodeURIComponent(`Invoice: ${sale.invoiceNo}\nAmount: Rs.${sale.totalAmount.toLocaleString('en-IN')}`);
-        window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${customer?.email || ''}&su=${subject}&body=${body}`, '_blank');
-      }
+      addToast('Draft Downloaded. Please share manually.', 'info');
+      
+      setTimeout(() => {
+        if (method === 'whatsapp') {
+          const text = encodeURIComponent(`*Invoice: ${sale.invoiceNo}*\nAmount: ₹${sale.totalAmount.toLocaleString('en-IN')}\n\nPDF downloaded to your device.`);
+          window.open(`https://wa.me/${phone.startsWith('91') ? phone : '91' + phone}?text=${text}`, '_blank');
+        } else {
+          const subject = encodeURIComponent(`Invoice ${sale.invoiceNo}`);
+          const body = encodeURIComponent(`Invoice: ${sale.invoiceNo}\nAmount: Rs.${sale.totalAmount.toLocaleString('en-IN')}`);
+          window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${customer?.email || ''}&su=${subject}&body=${body}`, '_blank');
+        }
+      }, 300);
     } catch (err) {
       console.error('Share Error:', err);
       addToast(`Error: ${err.message}`, 'error');
@@ -416,7 +242,7 @@ export default function Invoices() {
                               {s.isLocked && (
                                 <button className="btn btn-sm btn-outline" onClick={() => { setSelectedSaleId(s.id); setEditMode(true); }}><FileText size={13} /> View Details</button>
                               )}
-                              <button className="btn btn-sm btn-primary" onClick={() => { setSelectedSaleId(s.id); setTimeout(printInvoice, 300); }}><Download size={13} /> Download PDF</button>
+                              <button className="btn btn-sm btn-primary" onClick={() => generatePDF(s, null)}><Download size={13} /> PDF</button>
                               <button className="btn btn-sm btn-success" onClick={() => sendWhatsApp(s)} title="WhatsApp"><MessageCircle size={13} /></button>
                               <button className="btn btn-sm btn-outline" onClick={() => sendEmail(s)} title="Email"><Mail size={13} /></button>
                             </div>
@@ -449,7 +275,7 @@ export default function Invoices() {
                 )}
                 {selectedSale.isLocked && (
                   <>
-                    <button className="btn btn-primary" onClick={printInvoice}>
+                    <button className="btn btn-primary" onClick={() => generatePDF(selectedSale, editData)}>
                       <Download size={16} /> Download PDF
                     </button>
                     <button className="btn btn-success" onClick={() => sendWhatsApp(selectedSale)}>
@@ -626,14 +452,49 @@ export default function Invoices() {
         </>
       )}
 
-      {selectedSale && editData && (
-        <InvoicePrint 
-          sale={selectedSale} 
-          customer={selectedCustomer} 
-          companyInfo={companyInfo} 
-          items={editData.items} 
-        />
-      )}
+      {/* INVISIBLE RENDER FOR HTML2PDF CAPTURE */}
+      <div style={{ display: 'none' }} id="hidden-invoice-print-wrappers">
+        {sales.map(sale => {
+          const customer = customers.find(c => c.id === sale.customerId);
+          // When creating the PDF we need accurate data, so if we are viewing it or editing it, we use editData ONLY if it's the selected one.
+          // Otherwise we generate from sale info natively.
+          let saleItems = [];
+          if (sale.id === selectedSaleId && editData) {
+              saleItems = editData.items;
+          } else {
+              saleItems = sale.invoiceData?.items || (sale.items || []).map(item => {
+                const product = products.find(p => p.id === item.productId);
+                return { 
+                  description: product?.name || item.description || 'Product', 
+                  hsnCode: item.hsnCode || product?.hsnCode || '', 
+                  uom: item.uom || product?.unit || 'nos', 
+                  quantity: Number(item.quantity) || 0, 
+                  rate: Number(item.sellingPrice || item.rate) || 0, 
+                  discount: Number(item.discount) || 0, 
+                  amount: Number(item.total || item.amount) || 0 
+                };
+              });
+          }
+          // The sale reference might be supplemented by editData if we are actively editing
+          const safeSale = (sale.id === selectedSaleId && editData) ? { ...sale, invoiceData: editData } : sale;
+
+          return (
+            <div 
+              key={sale.id}
+              id={`invoice-print-capture-${sale.id}`} 
+              style={{ position: 'absolute', left: '-9999px', top: '-9999px', display: 'none', background: 'white' }}
+            >
+              <InvoicePrint 
+                sale={safeSale} 
+                customer={customer} 
+                companyInfo={companyInfo} 
+                items={saleItems} 
+              />
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
 }
