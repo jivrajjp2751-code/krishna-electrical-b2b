@@ -44,19 +44,16 @@ const defaultUsers = [
 
 const defaultCompanyInfo = {
   name: 'M/S. Krishna Electrical Works',
-  address: 'Block No-01:02, Bldg No-A5, Sector-18, Plot No-24, Nerul (W), Navi Mumbai-400 706',
-  secondAddress: 'Block No-01:02, Bldg No-A-5, Sect-18, Plot No-24, Nerul(West), Navi Mumbai, Maharastra - 400 706',
+  address: 'Block No-01:02, Bldg No-A-5, Sect-18, Plot No-24, Nerul(West), Navi Mumbai, Maharastra - 400 706',
   phone: '9022901053',
-  phone2: '9323901053',
   email: 'krishna.electricalworks3@gmail.com',
   gstNumber: '27ASTPG0673J1ZB',
-  pan: 'ASTPG0673J',
-  bankName: 'State Bank of India',
-  accountNo: '38765432100',
-  ifsc: 'SBIN0001234',
+  pan: 'ASTPG0673J1ZB',
+  bankName: 'IDBI BANK, Koper Khairane- Navi Mumbai.',
+  accountNo: '43110200 0001209',
+  ifsc: 'IBKL0000431',
   gstRate: 18,
   reminderDays: 30,
-  specialty: 'Rewinding & Repairing of AC/DC Motors, Transformers, Generators, Rectifiers and Stabilizers etc. Designing, Cabling, Trouble Shooting & AMC\'s of Process Control Systems, Electrical & Electronic Panels, Machining, Installation & commissioning of all types of Fluid Transfer Pumps, Pressure Pumps, Gear Boxes, Supervision, Monitoring of process control Equipments',
 };
 
 const useStore = create((set, get) => ({

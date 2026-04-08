@@ -142,56 +142,57 @@ export default function Invoices() {
     const doc = new jsPDF();
     const pageW = doc.internal.pageSize.getWidth();
     const pageH = doc.internal.pageSize.getHeight();
-    const m = 10; // margin
-    const cw = pageW - m * 2; // content width
+    const m = 10; 
+    const cw = pageW - m * 2; 
     const halfGst = getHalfGst();
-    let y = 10;
+    let y = 12;
 
     doc.setDrawColor(0);
     doc.setLineWidth(0.3);
 
-    // ── TITLE ──
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('TAX INVOICE', pageW / 2, y + 8, { align: 'center' });
-    
     // ── MOBILE ──
     doc.setFontSize(14);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Mob: ${companyInfo.phone}`, pageW - m - 4, y + 8, { align: 'right' });
-    y += 15;
+    doc.text(`Mob: ${companyInfo.phone}`, pageW - m, y, { align: 'right' });
+    
+    // ── TITLE ──
+    doc.setFontSize(22);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Tax Invoice', pageW / 2, y, { align: 'center' });
+    
+    y += 5;
     const displayInvNo = (sale.invoiceNo || '').replace(/inv-/i, '');
 
-    // ── HEADER TABLE (Company Info + Reference boxes) ──
+    // ── HEADER TABLE ──
     const headerData = [
       [
-        { content: `${companyInfo.name}\nBlock No-01:02, Bldg No-A-5,\nSect-18, Plot No-24, Nerul(West)\nNavi Mumbai, Maharastra - 400 706\n\nGSTN NO : ${companyInfo.gstNumber}\nPAN NO  : ${companyInfo.pan}\nMail ID : ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 2, halign: 'left', valign: 'top' } },
-        { content: `Invoice No. :\n${displayInvNo}`, styles: { halign: 'left' } },
-        { content: `Dated :\n${new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, styles: { halign: 'left' } }
+        { content: `${companyInfo.name}\n${companyInfo.address}\n\nGSTN NO: ${companyInfo.gstNumber}  PAN NO: ${companyInfo.pan}\nMail ID: ${companyInfo.email}`, rowSpan: 3, styles: { fontStyle: 'bold', fontSize: 10, cellPadding: 1.5, halign: 'left', valign: 'top' } },
+        { content: `Invoice No.\n${displayInvNo}`, styles: { halign: 'left', fontSize: 9 } },
+        { content: `Dated.\n${new Date(sale.date).toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' })}`, styles: { halign: 'left', fontSize: 9 } }
       ],
       [
-        { content: `Delivery Note. :\n${refData.deliveryNote || ''}`, styles: { halign: 'left' } },
-        { content: `Mode/Terms of Payment :\n${refData.paymentTerms || ''}`, styles: { halign: 'left' } }
+        { content: `Delivery Note.\n${refData.deliveryNote || ''}`, styles: { halign: 'left', fontSize: 9 } },
+        { content: `Mode/Terms of Payment\n${refData.paymentTerms || ''}`, styles: { halign: 'left', fontSize: 9 } }
       ],
       [
-        { content: `Suppliers Ref. :\n${refData.suppliersRef || ''}`, styles: { halign: 'left' } },
-        { content: `Other Reference(s) :\n${refData.otherRef || ''}`, styles: { halign: 'left' } }
+        { content: `Suppliers Ref.\n${refData.suppliersRef || ''}`, styles: { halign: 'left', fontSize: 9 } },
+        { content: `Other Reference(s)\n${refData.otherRef || ''}`, styles: { halign: 'left', fontSize: 9 } }
       ],
       [
-        { content: `Client :\n${customer?.name || 'Customer'}\n${customer?.address || ''}\n\nGSTN NO : ${customer?.gstNumber || ''}\nVendor Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 11, cellPadding: 2, halign: 'left', valign: 'top' } },
-        { content: `Buyers Order No. :\n${refData.buyersOrderNo || ''}`, styles: { halign: 'left' } },
-        { content: `Dated :\n${refData.buyersOrderDate || ''}`, styles: { halign: 'left' } }
+        { content: `Client : ${customer?.name || 'Customer'}\n${customer?.address || ''}\n\nGST No. ${customer?.gstNumber || ''}\nMail- ${customer?.email || ''}\nVender Code- ${customer?.vendorCode || ''}`, rowSpan: 4, styles: { fontStyle: 'bold', fontSize: 10, cellPadding: 1.5, halign: 'left', valign: 'top' } },
+        { content: `Buyers Order No.\n${refData.buyersOrderNo || ''}`, styles: { halign: 'left', fontSize: 9 } },
+        { content: `Dated.\n${refData.buyersOrderDate || ''}`, styles: { halign: 'left', fontSize: 9 } }
       ],
       [
-        { content: `Despatch Document No. :\n${refData.despatchDocNo || ''}`, styles: { halign: 'left' } },
-        { content: `Delivery Note Date :\n${refData.deliveryNoteDate || ''}`, styles: { halign: 'left' } }
+        { content: `Despatch Document No.\n${refData.despatchDocNo || ''}`, styles: { halign: 'left', fontSize: 9 } },
+        { content: `Delivery Note Date\n${refData.deliveryNoteDate || ''}`, styles: { halign: 'left', fontSize: 9 } }
       ],
       [
-        { content: `Despatched through :\n${refData.despatchedThrough || ''}`, styles: { halign: 'left' } },
-        { content: `Destination :\n${refData.destination || ''}`, styles: { halign: 'left' } }
+        { content: `Despatched through\n${refData.despatchedThrough || ''}`, styles: { halign: 'left', fontSize: 9 } },
+        { content: `Destination\n${refData.destination || ''}`, styles: { halign: 'left', fontSize: 9 } }
       ],
       [
-        { content: `Terms of Delivery :\n${refData.termsOfDelivery || ''}`, colSpan: 2, styles: { halign: 'left' } }
+        { content: `Terms of Delivery\n${refData.termsOfDelivery || ''}`, colSpan: 2, styles: { halign: 'left', fontSize: 9 } }
       ]
     ];
 
@@ -199,18 +200,19 @@ export default function Invoices() {
       startY: y,
       body: headerData,
       theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], overflow: 'linebreak' },
-      columnStyles: {
-        0: { cellWidth: cw * 0.55 },
-        1: { cellWidth: cw * 0.225 },
-        2: { cellWidth: cw * 0.225 },
-      },
+      styles: { fontSize: 9, cellPadding: 1.2, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], overflow: 'linebreak' },
+      columnStyles: { 0: { cellWidth: cw * 0.52 }, 1: { cellWidth: cw * 0.19 }, 2: { cellWidth: cw * 0.29 } },
       margin: { left: m, right: m },
     });
 
-    y = doc.lastAutoTable.finalY + 1;
+    y = doc.lastAutoTable.finalY + 0.5;
 
-    // ── ITEMS TABLE ──
+    // ── MAIN ITEMS TABLE (COMPRESSED) ──
+    const subTotal = items.reduce((s, it) => s + (it.amount || 0), 0);
+    const taxAmount = Math.round(subTotal * halfGst / 100); 
+    const gtot = Math.round(subTotal + (taxAmount * 2));
+    const rOff = (gtot - (subTotal + (taxAmount * 2)));
+
     const itemRows = items.map((item, i) => [
       i + 1,
       item.description,
@@ -221,87 +223,48 @@ export default function Invoices() {
       Number(item.amount).toLocaleString('en-IN', { minimumFractionDigits: 2 }),
     ]);
 
-    autoTable(doc, {
-      startY: y,
-      head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']],
-      body: itemRows,
-      theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 11, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 3 },
-      styles: { fontSize: 11, cellPadding: 3, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0] },
-      columnStyles: {
-        0: { cellWidth: 12, halign: 'center' },
-        1: { cellWidth: 88 },
-        2: { cellWidth: 18, halign: 'center' },
-        3: { cellWidth: 14, halign: 'center' },
-        4: { cellWidth: 16, halign: 'center' },
-        5: { cellWidth: 20, halign: 'right' },
-        6: { cellWidth: 22, halign: 'right', fontStyle: 'bold' },
-      },
-      margin: { left: m, right: m },
-    });
-
-    let ty = doc.lastAutoTable?.finalY || y + 30;
-
-    // ── FOOTER GRID: Declaration (Left) | Totals (Right) ──
-    const sub = items.reduce((s, it) => s + (it.amount || 0), 0);
-    const tax = sub * halfGst / 100;
-    const gtot = Math.round(sub + tax + tax);
-    const rOff = (gtot - (sub + tax + tax));
-
-    const totalsData = [
-      [
-        { content: '"This is to certify that we are not availing any CENVAT Credit on inputs and that our firm is individual / HUF / Proprietary Firm / Partnership Firm / AQP"', rowSpan: 5, styles: { fontSize: 8, valign: 'top', halign: 'left' } },
-        { content: 'Sub Total', styles: { halign: 'left' } },
-        { content: sub.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right' } }
-      ],
-      [
-        { content: `CGST @ ${halfGst}%`, styles: { halign: 'left' } },
-        { content: tax.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }
-      ],
-      [
-        { content: `SGST @ ${halfGst}%`, styles: { halign: 'left' } },
-        { content: tax.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }
-      ],
-      [
-        { content: 'Round off', styles: { halign: 'left' } },
-        { content: (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2), styles: { halign: 'right' } }
-      ],
-      [
-        { content: 'Grand Total (Rs)', styles: { halign: 'left', fontStyle: 'bold', fontSize: 11 } },
-        { content: gtot.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11 } }
-      ]
+    // Totals rows integrated into main table body
+    const totalsTableRows = [
+      [{ content: 'Sub total', colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: subTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }],
+      [{ content: `CGST @ ${halfGst} %`, colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }],
+      [{ content: `SGST @ ${halfGst} %`, colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: taxAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold' } }],
+      [{ content: 'Round Off', colSpan: 6, styles: { halign: 'right', border: [0, 1, 0, 1] } }, { content: (rOff >= 0 ? '+' : '-') + Math.abs(rOff).toFixed(2), styles: { halign: 'right' } }],
+      [{ content: 'Total', colSpan: 6, styles: { halign: 'right', fontStyle: 'bold', fontSize: 11, border: [1, 1, 1, 1] } }, { content: gtot.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { halign: 'right', fontStyle: 'bold', fontSize: 11, border: [1, 1, 1, 1] } }]
     ];
 
     autoTable(doc, {
-      startY: ty,
-      body: totalsData,
+      startY: y,
+      head: [['Sr.\nNo', 'Description of Goods', 'HSN/\nSAC', 'UOM', 'QTY', 'RATE', 'AMOUNT']],
+      body: [...itemRows, ...totalsTableRows],
       theme: 'grid',
-      styles: { fontSize: 9.5, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0] },
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 10, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 1.5 },
+      styles: { fontSize: 10, cellPadding: 1.5, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], valign: 'top' },
       columnStyles: {
-        0: { cellWidth: cw * 0.55 },
-        1: { cellWidth: cw * 0.25 },
-        2: { cellWidth: cw * 0.20 },
+        0: { cellWidth: cw * 0.05, halign: 'center' },
+        1: { cellWidth: cw * 0.44 },
+        2: { cellWidth: cw * 0.10, halign: 'center' },
+        3: { cellWidth: cw * 0.10, halign: 'center' },
+        4: { cellWidth: cw * 0.08, halign: 'center' },
+        5: { cellWidth: cw * 0.11, halign: 'right' },
+        6: { cellWidth: cw * 0.12, halign: 'right' },
       },
       margin: { left: m, right: m },
     });
 
-    ty = doc.lastAutoTable.finalY;
+    y = doc.lastAutoTable.finalY + 0.5;
 
-    // ── WORDS & GRAND TOTAL BAR ─────
+    // ── WORDS BAR ──
     autoTable(doc, {
-      startY: ty,
-      body: [
-        [{ content: `Amount Chargeable (in words) : Rs. ${numberToWords(gtot)} Only.`, colSpan: 2, styles: { fontStyle: 'bold' } }, { content: `Rs. ${gtot.toLocaleString('en-IN', { minimumFractionDigits: 2 })}`, styles: { halign: 'right', fontStyle: 'bold' } }]
-      ],
+      startY: y,
+      body: [[{ content: `Amount Chargable (Rs) : ${numberToWords(gtot)} Only.`, styles: { fontStyle: 'bold', fontSize: 10 } }, { content: `E,& O.E`, styles: { halign: 'right', fontSize: 9 } }]],
       theme: 'grid',
-      styles: { fontSize: 10, cellPadding: 2, lineWidth: 0.3, lineColor: [0, 0, 0] },
+      styles: { fontSize: 10, cellPadding: 1.5, lineWidth: 0.3, lineColor: [0, 0, 0] },
       margin: { left: m, right: m }
     });
 
-    ty = doc.lastAutoTable.finalY;
-    ty += 10;
+    y = doc.lastAutoTable.finalY + 2;
 
-    // ── HSN/SAC SUMMARY TABLE ──
+    // ── HSN SUMMARY TABLE (COMPACT) ──
     const hsnRows = [];
     const groupedHsn = items.reduce((acc, item) => {
       const code = item.hsnCode || '—';
@@ -310,74 +273,67 @@ export default function Invoices() {
       return acc;
     }, {});
 
+    let grandTaxable = 0, grandC = 0, grandS = 0;
     Object.keys(groupedHsn).forEach(code => {
       const taxable = groupedHsn[code];
-      const cAmt = taxable * halfGst / 100;
-      const sAmt = taxable * halfGst / 100;
-      hsnRows.push([
-        code,
-        taxable.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-        `${halfGst}%`, cAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 }),
-        `${halfGst}%`, sAmt.toLocaleString('en-IN', { minimumFractionDigits: 2 })
-      ]);
+      const c = Math.round(taxable * halfGst / 100), s = Math.round(taxable * halfGst / 100);
+      grandTaxable += taxable; grandC += c; grandS += s;
+      hsnRows.push([code, taxable.toLocaleString('en-IN', { minimumFractionDigits: 2 }), `${halfGst}%`, c.toLocaleString('en-IN', { minimumFractionDigits: 2 }), `${halfGst}%`, s.toLocaleString('en-IN', { minimumFractionDigits: 2 }), (c + s).toLocaleString('en-IN', { minimumFractionDigits: 2 })]);
     });
 
-    const totalTaxable = sub.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    const totalC = tax.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-    const totalS = tax.toLocaleString('en-IN', { minimumFractionDigits: 2 });
-
-    hsnRows.push([
-      { content: 'Total', styles: { halign: 'right', fontStyle: 'bold' } },
-      { content: totalTaxable, styles: { fontStyle: 'bold' } },
-      { content: '' },
-      { content: totalC, styles: { fontStyle: 'bold' } },
-      { content: '' },
-      { content: totalS, styles: { fontStyle: 'bold' } }
-    ]);
+    hsnRows.push([{ content: 'Total', styles: { halign: 'right', fontStyle: 'bold' } }, { content: grandTaxable.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }, '', { content: grandC.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }, '', { content: grandS.toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }, { content: (grandC + grandS).toLocaleString('en-IN', { minimumFractionDigits: 2 }), styles: { fontStyle: 'bold' } }]);
 
     autoTable(doc, {
-      startY: ty,
+      startY: y,
       head: [
-        [
-          { content: 'HSN/SAC', rowSpan: 2 },
-          { content: 'Taxable\nValue', rowSpan: 2 },
-          { content: 'Central Tax', colSpan: 2 },
-          { content: 'State Tax', colSpan: 2 }
-        ],
+        [{ content: 'HSN/SAC', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }, { content: 'Taxable\nValue', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }, { content: 'Central Tax', colSpan: 2, styles: { halign: 'center' } }, { content: 'State Tax', colSpan: 2, styles: { halign: 'center' } }, { content: 'Total\nTax Amount', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }],
         ['Rate', 'Amount', 'Rate', 'Amount']
       ],
       body: hsnRows,
       theme: 'grid',
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 7.5, fontStyle: 'bold', lineWidth: 0.4, lineColor: [0, 0, 0], halign: 'center', cellPadding: 2 },
-      styles: { fontSize: 7.5, cellPadding: 2, lineWidth: 0.4, lineColor: [0, 0, 0], textColor: [0, 0, 0], halign: 'right' },
-      columnStyles: { 0: { halign: 'center' }, 2: { halign: 'center' }, 4: { halign: 'center' } },
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 8, fontStyle: 'bold', lineWidth: 0.3, lineColor: [0, 0, 0], halign: 'center', cellPadding: 1 },
+      styles: { fontSize: 8.5, cellPadding: 1.2, lineWidth: 0.3, lineColor: [0, 0, 0], textColor: [0, 0, 0], halign: 'right' },
+      columnStyles: { 0: { halign: 'center', cellWidth: cw * 0.20 }, 1: { cellWidth: cw * 0.15 }, 2: { halign: 'center', cellWidth: cw * 0.08 }, 3: { cellWidth: cw * 0.12 }, 4: { halign: 'center', cellWidth: cw * 0.08 }, 5: { cellWidth: cw * 0.12 }, 6: { cellWidth: cw * 0.25 } },
       margin: { left: m, right: m },
     });
 
     y = doc.lastAutoTable.finalY;
     autoTable(doc, {
       startY: y,
-      body: [[{ content: `Tax Amount (in words) : Rs. ${numberToWords(tax + tax)} Only.`, styles: { fontStyle: 'bold' } }]],
+      body: [[{ content: `Tax Amount (in words) : Rs. ${numberToWords(grandC + grandS)} Only.`, styles: { fontStyle: 'bold', fontSize: 9.5 } }]],
       theme: 'grid',
-      styles: { fontSize: 9, cellPadding: 2, lineWidth: 0.4, lineColor: [0, 0, 0] },
+      styles: { fontSize: 9.5, cellPadding: 1.5, lineWidth: 0.3, lineColor: [0, 0, 0] },
       margin: { left: m, right: m }
     });
     
-    let endY = doc.lastAutoTable?.finalY || ty + 20;
+    y = doc.lastAutoTable.finalY + 2;
 
-    // ── FINAL SIGNATURES ─────
-    autoTable(doc, {
-      startY: endY + 2,
-      body: [
-        [
-          { content: `Bank Details:\nBank Name: ${companyInfo.bankName || 'SBI'}\nA/c No: ${companyInfo.accountNo || ''}\nIFSC: ${companyInfo.ifsc || ''}`, styles: { fontSize: 9, cellPadding: 3 } },
-          { content: `FOR ${companyInfo.name}\n\n\n\nAuthorised Signatory`, styles: { halign: 'right', valign: 'bottom', fontSize: 10, fontStyle: 'bold' } }
-        ]
-      ],
-      theme: 'grid',
-      styles: { lineWidth: 0.3, lineColor: [0, 0, 0] },
-      margin: { left: m, right: m }
-    });
+    // ── COMPACT FOOTER (BANK, DECLARATION, SIG) ──
+    doc.setLineWidth(0.3);
+    doc.line(m, y, pageW - m, y); // Top border of footer box
+
+    const lineH = 4.2;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${companyInfo.bankName}`, m + 2, y + lineH);
+    doc.text(`A/c No- ${companyInfo.accountNo} RTGS/NEFT Code-${companyInfo.ifsc}`, m + 2, y + lineH * 2);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Declaration', m + 2, y + lineH * 3.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('We declare that this invoice shows the actual price of the goods described', m + 2, y + lineH * 4.8);
+    doc.text('and that all particulars are true and correct.', m + 2, y + lineH * 5.6);
+
+    const signatureName = companyInfo.name.startsWith('M/S. ') ? companyInfo.name.substring(5) : companyInfo.name;
+    doc.setFontSize(10);
+    doc.text(`For ${signatureName}`, pageW - m - 5, y + lineH * 3.5, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.text('Authorised Signatory', pageW - m - 5, y + lineH * 7, { align: 'right' });
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('This is a Computer Generated Invoice', pageW / 2, pageH - 6, { align: 'center' });
 
     return doc;
   };
